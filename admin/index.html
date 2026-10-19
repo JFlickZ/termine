@@ -276,6 +276,11 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
 .btn-q:hover { color: var(--ink); }
 .btn-q.danger { color: var(--error); }
 
+/* Person löschen: leise am Ende der Akte, erst nach Rückfrage rot */
+.dz { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-3); }
+.dz b { color: var(--ink); }
+.btn.danger { background: var(--error); color: var(--surface); }
+
 /* Formulare */
 .f { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; padding: 14px 16px; }
 .f label { display: grid; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--ink-3); }
@@ -386,6 +391,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     ['Nächsten Kontakt festlegen.', 'Nächster Kontakt', 'do'],
     ['Check-up als erledigt markieren.', null, 'action:checkup'],
   ];
+  var LABEL = { 'Partner-ID': 'Partner-ID / IB-ID' };
   var LONG = { 'Situation': 1, 'Trading-Erfahrung': 1, 'Erwartung': 1, 'Echtes Warum': 1, 'Vision': 1, 'Persönliche Punkte / Notizen': 1 };
 
   var ICON = {
@@ -612,7 +618,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     var counts = {};
     ov.partners.forEach(function (p) { var g = group(p); counts[g] = (counts[g] || 0) + 1; });
     counts.alle = ov.partners.length;
-    html += '<div class="tools"><label class="search">' + ICON.search + '<input type="search" id="q" placeholder="Name, E-Mail, Telegram" aria-label="Suchen" value="' + esc(st.q) + '"></label>' +
+    html += '<div class="tools"><label class="search">' + ICON.search + '<input type="search" id="q" placeholder="Name, E-Mail, Telegram, Nummer" aria-label="Suchen" value="' + esc(st.q) + '"></label>' +
       '<div class="chips" role="group" aria-label="Filter">' + FILTERS.map(function (f) {
         return '<button type="button" class="chip" data-filter="' + f[0] + '" aria-pressed="' + (st.filter === f[0]) + '">' + f[1] + '<b>' + (counts[f[0]] || 0) + '</b></button>';
       }).join('') + '</div><button type="button" class="btn-o" data-create style="margin-left:auto">' + ICON.plus + 'Person anlegen</button></div>';
@@ -633,7 +639,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     var list = ov.partners.filter(function (p) {
       if (st.filter !== 'alle' && group(p) !== st.filter) return false;
       if (!q) return true;
-      return [p.name, p.email, p.telegram].join(' ').toLowerCase().indexOf(q) !== -1;
+      return [p.name, p.email, p.telegram, p.phone, p.pid].join(' ').toLowerCase().indexOf(q) !== -1;
     }).map(function (p) { return { p: p, n: nextStep(p, ov.today) }; });
     list.sort(function (a, b) {
       if (a.n.o !== b.n.o) return a.n.o - b.n.o;
@@ -656,7 +662,8 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     if (!box) return;
     box.innerHTML = '<div class="cal" style="margin-bottom:16px"><h2 class="band"><span>Person anlegen</span></h2><form class="f" id="createForm">' +
       '<label>Name<input name="name" required maxlength="80"></label><label>E-Mail<input name="email" type="email" maxlength="120"></label>' +
-      '<label>Telegram<input name="telegram" placeholder="@name" maxlength="60"></label>' +
+      '<label>Telegram<input name="telegram" placeholder="@name" maxlength="60"></label><label>Handynummer<input name="phone" type="tel" maxlength="30"></label>' +
+      '<label>Partner-ID / IB-ID<input name="pid" maxlength="40"></label>' +
       '<label>Neu / Bestand<select name="member"><option>Bestand</option><option value="neu">neu</option></select></label>' +
       '<button class="btn" type="submit">Anlegen</button><button type="button" class="btn-q" data-create-cancel>Abbrechen</button><p class="err" role="alert" hidden></p></form></div>';
     box.querySelector('input').focus();
@@ -665,7 +672,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
   function doCreate(form) {
     var btn = form.querySelector('.btn'), err = form.querySelector('.err');
     btn.disabled = true; err.hidden = true;
-    admin('apiAdminCreate', { name: form.name.value, email: form.email.value, telegram: form.telegram.value, member: form.member.value }).then(function (res) {
+    admin('apiAdminCreate', { name: form.name.value, email: form.email.value, telegram: form.telegram.value, phone: form.phone.value, pid: form.pid.value, member: form.member.value }).then(function (res) {
       btn.disabled = false;
       if (!res || !res.ok) { err.textContent = (res && res.msg) || 'Das hat nicht geklappt.'; err.hidden = false; return; }
       st.ov = null;
@@ -677,6 +684,15 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
   // Wie die Buchungsseite (Wochen → Kacheln → Uhrzeiten), aber mit Namen, Sperrzeiten und privaten Terminen.
   // Ein gebuchter Termin klappt auf: Checkliste der Person und Leitfaden des Calls, Felder speichern beim Tippen.
   var WEEK_NAMES = [['Diese Woche', 'Diese'], ['Nächste Woche', 'Nächste'], ['Übernächste Woche', 'Übernächste']];
+
+  // Telegram, Handy, E-Mail, Partner-ID als eine Zeile mit Links
+  function contactSpans(f) {
+    var tel = String(f['Handynummer'] || '');
+    return (f['Telegram'] ? '<span><a href="https://t.me/' + esc(String(f['Telegram']).replace(/^@/, '')) + '" target="_blank" rel="noopener">' + esc(f['Telegram']) + '</a></span>' : '') +
+      (tel ? '<span><a href="tel:' + esc(tel.replace(/[^\d+]/g, '')) + '">' + esc(tel) + '</a></span>' : '') +
+      (f['E-Mail'] ? '<span><a href="mailto:' + esc(f['E-Mail']) + '">' + esc(f['E-Mail']) + '</a></span>' : '') +
+      (f['Partner-ID'] ? '<span>ID ' + esc(f['Partner-ID']) + '</span>' : '');
+  }
 
   function longDate(iso) { return fmt(iso, { weekday: 'long', day: 'numeric', month: 'long' }); }
   function calls(n) { return n === 1 ? '1 Call' : n + ' Calls'; }
@@ -796,9 +812,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     var plugin = latest(r.bookings, 'plugin'), checkup = latest(r.bookings, 'checkup');
     var bk = r.bookings.filter(function (x) { return x.id === s.b.id; })[0] || null;
     var n = CHECK.filter(function (c) { return f[c] === true; }).length;
-    var html = '<div class="ap-top"><p class="meta"><span>' + esc(f['Neu / Bestand'] || 'neu') + '</span>' +
-      (f['Telegram'] ? '<span><a href="https://t.me/' + esc(String(f['Telegram']).replace(/^@/, '')) + '" target="_blank" rel="noopener">' + esc(f['Telegram']) + '</a></span>' : '') +
-      (f['E-Mail'] ? '<span><a href="mailto:' + esc(f['E-Mail']) + '">' + esc(f['E-Mail']) + '</a></span>' : '') + '</p><div class="ap-act">' +
+    var html = '<div class="ap-top"><p class="meta"><span>' + esc(f['Neu / Bestand'] || 'neu') + '</span>' + contactSpans(f) + '</p><div class="ap-act">' +
       (bk ? '<label class="pill-select">Status<select data-booking="' + esc(bk.id) + '">' + STATUS.map(function (x) { return '<option' + (x === bk.status ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label>' : '') +
       '<a class="btn-o" href="#/p/' + esc(r.token) + '">Akte öffnen' + ICON.chev + '</a></div></div>';
     var list = '<section class="ap-card"><h3 class="band"><span>48h-Checkliste</span><span class="cnt" id="ap-cnt">' + (r.pluginDone ? n + ' von 6' : 'gesperrt') + '</span></h3>' +
@@ -972,9 +986,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     var summary = { plugin: plugin, checkup: checkup, pluginDone: r.pluginDone, phase: f['Phase'] || 'Neu', checks: CHECK.filter(function (c) { return f[c] === true; }).length };
     var html = '<a class="back" href="#/">' + ICON.back + 'Übersicht</a>';
     html += '<div class="head"><div class="grow"><h1>' + esc(f['Name']) + '</h1><p class="meta">' +
-      '<span>' + esc(f['Neu / Bestand'] || 'neu') + '</span>' +
-      (f['Telegram'] ? '<span><a href="https://t.me/' + esc(String(f['Telegram']).replace(/^@/, '')) + '" target="_blank" rel="noopener">' + esc(f['Telegram']) + '</a></span>' : '') +
-      (f['E-Mail'] ? '<span><a href="mailto:' + esc(f['E-Mail']) + '">' + esc(f['E-Mail']) + '</a></span>' : '') +
+      '<span>' + esc(f['Neu / Bestand'] || 'neu') + '</span>' + contactSpans(f) +
       (r.created ? '<span>seit ' + esc(String(r.created).slice(0, 10)) + '</span>' : '') + '</p></div>' +
       '<label class="pill-select">Phase<select data-field="Phase">' + PHASES.map(function (p) { return '<option' + (p === (f['Phase'] || 'Neu') ? ' selected' : '') + '>' + p + '</option>'; }).join('') + '</select></label></div>';
 
@@ -1002,13 +1014,35 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     html += r.pluginDone ? checklist + checkupSec + pluginSec : pluginSec + checklist + checkupSec;
 
     // Stammdaten
-    html += '<section class="sec cal"><h2 class="band"><span>Stammdaten</span></h2><div class="grid2">' +
-      field('Name') + field('E-Mail', 'email') + field('Telegram') +
+    var missing = [!f['Handynummer'] ? 'Handynummer' : '', f['Neu / Bestand'] === 'Bestand' && !f['Partner-ID'] ? 'Partner-ID' : ''].filter(Boolean);
+    html += '<section class="sec cal"><h2 class="band"><span>Stammdaten</span>' + (missing.length ? '<span class="cnt">fehlt: ' + missing.join(', ') + '</span>' : '') + '</h2><div class="grid2">' +
+      field('Name') + field('E-Mail', 'email') + field('Handynummer', 'tel') + field('Telegram') +
       '<label class="field"><span>Neu / Bestand</span><select data-field="Neu / Bestand"><option' + (f['Neu / Bestand'] === 'neu' ? ' selected' : '') + '>neu</option><option' + (f['Neu / Bestand'] === 'Bestand' ? ' selected' : '') + '>Bestand</option></select></label>' +
-      '</div></section>';
+      field('Partner-ID') + '</div></section>';
+    html += '<div class="dz" id="dz">' + dzHtml(false) + '</div>';
 
     app.innerHTML = shell('home', html);
     setSaved(st.saving ? 'busy' : '');
+  }
+
+  function dzHtml(ask) {
+    var name = esc(st.person.fields['Name'] || 'Diese Person');
+    if (!ask) return '<button type="button" class="btn-q" data-del-ask>Person löschen</button><span>mit allen Calls und Kalenderterminen</span>';
+    return '<span><b>' + name + ' wirklich löschen?</b> Alle Calls, Notizen und die Termine in deinem Google Kalender sind dann weg.</span>' +
+      '<button type="button" class="btn danger" data-del-yes>Endgültig löschen</button><button type="button" class="btn-q" data-del-no>Abbrechen</button>';
+  }
+
+  function deletePerson(btn) {
+    var token = st.person.token, name = st.person.fields['Name'];
+    clearTimeout(st.saveTimer);
+    st.dirty = {};
+    btn.disabled = true; btn.textContent = 'Wird gelöscht …';
+    admin('apiAdminDeletePerson', token).then(function (res) {
+      if (!res || !res.ok) { toast((res && res.msg) || 'Das hat nicht geklappt.'); btn.disabled = false; btn.textContent = 'Endgültig löschen'; return; }
+      st.person = null; st.ov = null;
+      toast(name + ' ist gelöscht.');
+      location.hash = '#/';
+    }).catch(function (err) { if (!err || err.message !== 'AUTH') { toast('Keine Verbindung.'); btn.disabled = false; btn.textContent = 'Endgültig löschen'; } });
   }
 
   function collSection(id, title, cnt, body, open) {
@@ -1033,7 +1067,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
       return '<label class="check" style="padding:10px 0 0"><input type="checkbox" data-field="Erlaubnis zu pushen"' + (v === true ? ' checked' : '') + '>Erlaubnis bekommen</label>';
     }
     if (LONG[name]) return '<label class="field"><span>' + esc(name) + '</span><textarea data-field="' + esc(name) + '" rows="3" maxlength="4000">' + esc(v) + '</textarea></label>';
-    return '<label class="field"><span>' + esc(name) + '</span><input data-field="' + esc(name) + '" type="' + (type || 'text') + '" maxlength="120" value="' + esc(v) + '"></label>';
+    return '<label class="field"><span>' + esc(LABEL[name] || name) + '</span><input data-field="' + esc(name) + '" type="' + (type || 'text') + '" maxlength="120" value="' + esc(v) + '"></label>';
   }
 
   function guideRow(g, i, plugin, checkup) {
@@ -1282,6 +1316,9 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     else if (t.hasAttribute('data-cblock')) quickBlock(t);
     else if (t.hasAttribute('data-cunblock')) quickUnblock(t);
     else if (t.hasAttribute('data-corphan')) quickOrphan(t);
+    else if (t.hasAttribute('data-del-ask')) { document.getElementById('dz').innerHTML = dzHtml(true); document.querySelector('[data-del-no]').focus(); }
+    else if (t.hasAttribute('data-del-no')) { document.getElementById('dz').innerHTML = dzHtml(false); }
+    else if (t.hasAttribute('data-del-yes')) deletePerson(t);
     else if (t.hasAttribute('data-create')) openCreate();
     else if (t.hasAttribute('data-create-cancel')) document.getElementById('create').innerHTML = '';
     else if (t.hasAttribute('data-status')) { t.disabled = true; setStatus(t.getAttribute('data-id'), t.getAttribute('data-status')); }

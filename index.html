@@ -224,7 +224,7 @@ button.row:focus-visible, a.row:focus-visible { outline-offset: -2px; border-rad
 .f label, .f legend { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
 .opt { font-weight: 400; color: var(--ink-3); }
 .hint { font-size: 12.5px; font-weight: 400; color: var(--ink-3); }
-.f input[type="text"], .f input[type="email"], .copy input {
+.f input[type="text"], .f input[type="email"], .f input[type="tel"], .copy input {
   width: 100%; font: inherit; font-size: 16px; color: var(--ink);
   padding: 11px 12px; background: var(--surface);
   border: 1px solid var(--line-strong); border-radius: 8px;
@@ -246,6 +246,11 @@ button.row:focus-visible, a.row:focus-visible { outline-offset: -2px; border-rad
 .seg-in span { display: block; padding: 10px 8px; text-align: center; font-size: 14px; font-weight: 600; color: var(--ink-2); transition: background-color .15s, color .15s; }
 .seg-in input:checked + span { background: var(--accent-soft); color: var(--accent-ink); }
 .seg-in input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* Partner-ID: nur bei „schon länger dabei“, klappt mit derselben Kurve auf wie die Termine */
+.more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .32s var(--ease); margin-top: -14px; }
+.more.open { grid-template-rows: 1fr; margin-top: 0; }
+.more > div { overflow: hidden; min-height: 0; }
+.more label { padding: 0 1px 1px; }
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 2px; }
 .err { margin: 0; font-size: 14px; font-weight: 600; color: #b42318; }
@@ -662,21 +667,42 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
     return { day: day, slot: slot };
   }
 
+  var PHONE_FIELD = '<label>Handynummer<input name="phone" type="tel" aria-label="Handynummer" inputmode="tel" autocomplete="tel" placeholder="+49 …" maxlength="30" required>' +
+    '<span class="hint">Falls wir kurzfristig etwas abstimmen müssen.</span></label>';
+  var PID_FIELD = '<label>Partner-ID / IB-ID<input name="pid" type="text" aria-label="Partner-ID oder IB-ID" maxlength="40" autocapitalize="off" autocorrect="off" spellcheck="false" required></label>';
+
   function formHtml(key) {
     var x = slotOf(key);
     var when = longDate(x.day.date) + ' · ' + x.slot.t + '–' + x.slot.e + ' Uhr';
     var acts = '<div class="acts"><button class="btn" type="submit">Termin buchen</button><button type="button" class="btn-q" data-close>Abbrechen</button></div><p class="err" role="alert" hidden></p>';
     if (st.data.person) {
-      return '<form class="f" data-key="' + key + '" novalidate><p class="when">' + esc(when) + '</p><p class="lead">Passt dir das, ' + esc(st.data.person.name) + '?</p>' + acts + '</form>';
+      // Bekannte Person: nur nachfragen, was noch fehlt (z. B. von Hand angelegt)
+      var miss = st.data.person.missing || {};
+      var extra = (miss.phone ? PHONE_FIELD : '') + (miss.pid ? PID_FIELD : '');
+      return '<form class="f" data-key="' + key + '" novalidate><p class="when">' + esc(when) + '</p><p class="lead">Passt dir das, ' + esc(st.data.person.name) + '?' +
+        (extra ? ' Dann brauch ich noch:' : '') + '</p>' + extra + acts + '</form>';
     }
     return '<form class="f" data-key="' + key + '" novalidate><p class="when">' + esc(when) + '</p>' +
       '<label>Name<input name="name" type="text" aria-label="Name" autocomplete="name" maxlength="80" required></label>' +
       '<label>E-Mail<input name="email" type="email" aria-label="E-Mail" inputmode="email" autocomplete="email" maxlength="120" required><span class="hint">Hierhin geht die Kalender-Einladung.</span></label>' +
+      PHONE_FIELD +
       '<label><span>Telegram <span class="opt">optional</span></span><input name="telegram" type="text" aria-label="Telegram, optional" placeholder="@deinname" maxlength="60" autocapitalize="off" autocorrect="off" spellcheck="false"></label>' +
       '<fieldset class="seg"><legend>Du bist …</legend><div class="seg-in">' +
       '<label><input type="radio" name="member" value="neu" required><span>neu im Team</span></label>' +
       '<label><input type="radio" name="member" value="Bestand"><span>schon länger dabei</span></label></div></fieldset>' +
+      '<div class="more" data-more aria-hidden="true"><div>' + PID_FIELD.replace('<input ', '<input tabindex="-1" ') + '</div></div>' +
       '<input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">' + acts + '</form>';
+  }
+
+  // „schon länger dabei“ → Feld für die Partner-ID aufklappen
+  function syncMember(form) {
+    var more = form.querySelector('[data-more]');
+    if (!more) return;
+    var on = (form.querySelector('input[name="member"]:checked') || {}).value === 'Bestand';
+    more.classList.toggle('open', on);
+    more.setAttribute('aria-hidden', String(!on));
+    var input = more.querySelector('input');
+    if (on) input.removeAttribute('tabindex'); else input.setAttribute('tabindex', '-1');
   }
 
   function confirmHtml() {
@@ -756,15 +782,24 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
     form.querySelectorAll('[aria-invalid]').forEach(function (n) { n.removeAttribute('aria-invalid'); });
     form.querySelectorAll('.invalid').forEach(function (n) { n.classList.remove('invalid'); });
     var req = { kind: st.kind, date: x.day.date, time: x.slot.t, token: st.token };
+    var phoneOk = function (v) { var n = v.replace(/\D/g, '').length; return /^\+?[0-9][0-9 ()\/.-]{4,22}$/.test(v) && n >= 6 && n <= 16; };
+    if (fd.has('phone')) req.phone = String(fd.get('phone') || '').trim();
     if (!st.data.person) {
       req.name = String(fd.get('name') || '').trim();
       req.email = String(fd.get('email') || '').trim();
       req.telegram = String(fd.get('telegram') || '').trim();
       req.member = fd.get('member');
       req.website = String(fd.get('website') || '');
+      if (req.member === 'Bestand') req.pid = String(fd.get('pid') || '').trim();
       if (req.name.length < 2) return fieldError(form, 'name', 'Bitte gib deinen Namen an.');
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(req.email)) return fieldError(form, 'email', 'Diese E-Mail-Adresse sieht nicht richtig aus.');
+      if (!phoneOk(req.phone)) return fieldError(form, 'phone', 'Bitte gib deine Handynummer an, z. B. +49 151 2345678.');
       if (req.member !== 'neu' && req.member !== 'Bestand') return fieldError(form, 'member', 'Bitte wähl aus, ob du neu bist oder schon länger dabei.');
+      if (req.member === 'Bestand' && req.pid.length < 3) return fieldError(form, 'pid', 'Bitte gib deine Partner-ID / IB-ID an.');
+    } else {
+      if (fd.has('pid')) req.pid = String(fd.get('pid') || '').trim();
+      if (fd.has('phone') && !phoneOk(req.phone)) return fieldError(form, 'phone', 'Bitte gib deine Handynummer an, z. B. +49 151 2345678.');
+      if (fd.has('pid') && req.pid.length < 3) return fieldError(form, 'pid', 'Bitte gib deine Partner-ID / IB-ID an.');
     }
     var btn = form.querySelector('.btn');
     var err = form.querySelector('.err');
@@ -783,7 +818,7 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
       }
       btn.disabled = false;
       btn.textContent = 'Termin buchen';
-      if (res && (res.code === 'name' || res.code === 'email')) return fieldError(form, res.code, res.msg);
+      if (res && /^(name|email|phone|pid)$/.test(res.code) && form.querySelector('[name="' + res.code + '"]')) return fieldError(form, res.code, res.msg);
       if (res && (res.code === 'taken' || res.code === 'closed' || res.code === 'invalid')) {
         toast(res.msg);
         return refresh(true);
@@ -1015,6 +1050,10 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
     var tabs = Array.prototype.slice.call(app.querySelectorAll('.tab'));
     var i = tabs.indexOf(tab) + (e.key === 'ArrowRight' ? 1 : -1);
     if (tabs[i]) { e.preventDefault(); tabs[i].click(); }
+  });
+
+  app.addEventListener('change', function (e) {
+    if (e.target.name === 'member') syncMember(e.target.form);
   });
 
   app.addEventListener('submit', function (e) {
