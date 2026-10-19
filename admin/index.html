@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Admin · Call-Buchung</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="light dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@80..100,400..700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f5f7; --surface: #ffffff; --band: #e9ecf1; --line: #e3e6ec; --line-strong: #cfd5de;
+  --ink: #1d2330; --ink-2: #4a5263; --ink-3: #636b7c;
+  --accent: #e0802b; --accent-ink: #9c4c0b; --accent-soft: rgba(224, 128, 43, 0.12); --accent-wash: rgba(224, 128, 43, 0.05);
+  --on-accent: #1d1206; --taken: #c3c9d3; --error: #b42318; --ok: #1f7a3d; --toast: #1d2330;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111419; --surface: #181c23; --band: #21262f; --line: #2a303b; --line-strong: #3a414e;
+    --ink: #e7eaf0; --ink-2: #b9c0cc; --ink-3: #959dab;
+    --accent: #f0954a; --accent-ink: #f6ad6e; --accent-soft: rgba(240, 149, 74, 0.16); --accent-wash: rgba(240, 149, 74, 0.06);
+    --on-accent: #1a1006; --taken: #454c59; --error: #f97066; --ok: #5fd08a; --toast: #e7eaf0;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scrollbar-color: var(--line-strong) transparent; scrollbar-width: thin; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.45; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
+::selection { background: var(--accent); color: var(--on-accent); }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+a { color: var(--accent-ink); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+svg { flex: none; }
+button { font: inherit; color: inherit; }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 72px; }
+.narrow { max-width: 860px; }
+
+/* Kopf */
+.topbar { display: flex; align-items: center; gap: 12px 20px; flex-wrap: wrap; padding: 4px 0 18px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+.brand { font-weight: 700; font-size: 15px; font-stretch: 92%; display: flex; align-items: center; gap: 8px; }
+.brand i { display: block; width: 4px; height: 16px; border-radius: 2px; background: var(--accent); }
+.nav { display: flex; gap: 2px; padding: 3px; background: var(--band); border-radius: 10px; }
+.nav a { padding: 7px 12px; border-radius: 7px; font-size: 14px; font-weight: 600; color: var(--ink-2); text-decoration: none; white-space: nowrap; }
+.nav a[aria-current="page"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(16, 24, 40, .1); }
+.nav a:hover { color: var(--ink); }
+.top-r { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.saved { font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+.saved.busy { color: var(--accent-ink); }
+.saved.err { color: var(--error); font-weight: 600; }
+
+h1 { margin: 0 0 6px; font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2rem); line-height: 1.12; font-weight: 700; font-stretch: 92%; letter-spacing: -0.02em; }
+.meta { margin: 0; color: var(--ink-2); font-size: 14.5px; display: flex; flex-wrap: wrap; gap: 4px 0; align-items: center; }
+.meta > * + *::before { content: ""; display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--ink-3); vertical-align: middle; margin: 0 10px; }
+.back { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; text-decoration: none; margin-bottom: 14px; }
+
+/* Tabellen-Karten */
+.cal { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.cal + .cal, .sec + .sec { margin-top: 24px; }
+.band { margin: 0; padding: 9px 16px; display: flex; align-items: baseline; gap: 10px; background: var(--band); border-radius: 11px 11px 0 0; font-size: 14.5px; font-weight: 700; font-stretch: 92%; }
+.band .cnt { margin-left: auto; font-size: 13px; font-weight: 500; color: var(--ink-3); font-stretch: 100%; }
+.rows { list-style: none; margin: 0; padding: 0; }
+.rows > li + li { border-top: 1px solid var(--line); }
+.empty { padding: 18px 16px; color: var(--ink-2); }
+.tag { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-ink); background: var(--accent-soft); padding: 2px 6px 1px; border-radius: 4px; white-space: nowrap; }
+.tag.q { color: var(--ink-2); background: var(--band); }
+.tag.warn { color: var(--error); background: rgba(180, 35, 24, .1); }
+
+/* Heute & demnächst */
+.soon { display: grid; grid-template-columns: 112px 58px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 16px; text-decoration: none; color: inherit; }
+.soon:hover { background: var(--accent-wash); }
+.soon .d { font-weight: 600; color: var(--ink-2); }
+.soon .t { font-weight: 650; }
+.soon .n { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Werkzeugleiste */
+.tools { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin: 28px 0 12px; }
+.search { flex: 1 1 220px; max-width: 320px; position: relative; }
+.search input { width: 100%; padding: 10px 12px 10px 36px; font: inherit; font-size: 15px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--ink); caret-color: var(--accent); }
+.search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-3); }
+.search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { appearance: none; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2); padding: 6px 11px; border-radius: 999px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.chip b { font-weight: 600; color: var(--ink-3); margin-left: 4px; }
+.chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+.chip[aria-pressed="true"] b { color: var(--accent-ink); }
+
+/* Fortschritts-Strecke */
+.track-head, .prow { display: grid; grid-template-columns: minmax(180px, 1.2fr) 280px minmax(160px, 1fr) 20px; gap: 16px; align-items: center; padding: 0 16px; }
+.track-head { padding-top: 9px; padding-bottom: 9px; border-bottom: 1px solid var(--line); font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.track-head .labels { display: grid; grid-template-columns: repeat(5, 1fr); text-align: center; letter-spacing: 0; text-transform: none; font-size: 12px; }
+.prow { min-height: 62px; padding-top: 10px; padding-bottom: 10px; text-decoration: none; color: inherit; }
+.prow:hover { background: var(--accent-wash); }
+.pname { min-width: 0; }
+.pname b { display: block; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pname small { display: block; color: var(--ink-3); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.next { font-size: 14px; color: var(--ink-2); min-width: 0; }
+.next.act { color: var(--accent-ink); font-weight: 600; }
+.next.warn { color: var(--error); font-weight: 600; }
+.prow > svg { color: var(--ink-3); }
+
+.track { display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; position: relative; height: 22px; }
+.track::before { content: ""; position: absolute; left: 10%; right: 10%; top: 50%; height: 1px; background: var(--line-strong); }
+.track .fill { position: absolute; left: 10%; top: 50%; height: 2px; margin-top: -0.5px; background: var(--accent); border-radius: 1px; }
+.st { justify-self: center; position: relative; z-index: 1; width: 12px; height: 12px; border-radius: 3px; background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.st.done { background: var(--accent); box-shadow: none; }
+.st.half { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.st.pips { width: auto; height: 14px; display: flex; gap: 2px; padding: 0 3px; background: var(--surface); box-shadow: none; align-items: center; }
+.st.pips i { display: block; width: 3px; height: 12px; border-radius: 1px; background: var(--taken); }
+.st.pips i.on { background: var(--accent); }
+.track.big { height: 30px; }
+.track.big .st { width: 16px; height: 16px; border-radius: 4px; }
+.track.big .st.pips { height: 18px; }
+.track.big .st.pips i { width: 4px; height: 16px; }
+.track-labels { display: grid; grid-template-columns: repeat(5, 1fr); text-align: center; font-size: 12.5px; color: var(--ink-3); margin-top: 4px; }
+.track-labels span.on { color: var(--accent-ink); font-weight: 600; }
+
+/* Akte */
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 20px; margin-bottom: 22px; }
+.head .grow { flex: 1 1 320px; min-width: 0; }
+.pill-select { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-3); font-weight: 600; }
+select, .f input, .f textarea, .field input, .field textarea, .field select {
+  font: inherit; font-size: 15px; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line-strong); border-radius: 8px; padding: 9px 11px; caret-color: var(--accent);
+  transition: border-color .15s, box-shadow .15s;
+}
+select { padding-right: 30px; cursor: pointer; }
+select:focus, .field input:focus, .field textarea:focus, .f input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
+.trackcard { padding: 16px 18px 14px; }
+.linkrow { display: flex; gap: 8px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.linkrow span { font-size: 13px; font-weight: 600; color: var(--ink-3); }
+.linkrow input { flex: 1 1 260px; min-width: 0; font: inherit; font-size: 13.5px; color: var(--ink-2); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+
+.brow { display: grid; grid-template-columns: 96px 1fr auto; gap: 12px; align-items: center; padding: 11px 16px; }
+.brow .d b { display: block; font-weight: 650; }
+.brow .d small { color: var(--ink-3); font-size: 12.5px; }
+.bact { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.bact select { font-size: 14px; padding: 7px 28px 7px 10px; }
+
+.guide { list-style: none; margin: 0; padding: 0; counter-reset: g; }
+.guide > li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; padding: 14px 16px; }
+.guide > li + li { border-top: 1px solid var(--line); }
+.guide .num { font-weight: 700; color: var(--ink-3); padding-top: 1px; }
+.guide .q { margin: 0; color: var(--ink); }
+.guide .q.say { font-weight: 600; }
+.guide .hint { margin: 2px 0 0; font-size: 13px; color: var(--ink-3); }
+.field { display: grid; gap: 6px; margin-top: 10px; }
+.field > span { font-size: 12.5px; font-weight: 600; color: var(--ink-3); letter-spacing: .02em; }
+.field input, .field textarea, .field select { width: 100%; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; padding: 4px 16px 16px; }
+.check { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px 16px; }
+.check + .check { border-top: 1px solid var(--line); }
+.check input { appearance: none; width: 20px; height: 20px; margin: 0; border-radius: 5px; border: 1.5px solid var(--line-strong); background: var(--surface); display: grid; place-items: center; cursor: pointer; flex: none; }
+.check input:checked { background: var(--accent); border-color: var(--accent); }
+.check input:checked::after { content: ""; width: 10px; height: 6px; border-left: 2.5px solid var(--on-accent); border-bottom: 2.5px solid var(--on-accent); transform: translateY(-1px) rotate(-45deg); }
+.check input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.check small { margin-left: auto; color: var(--ink-3); font-size: 13px; }
+.done-note { display: flex; align-items: center; gap: 8px; color: var(--ok); font-weight: 600; margin-top: 8px; }
+
+/* Buttons */
+.btn { appearance: none; border: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 16px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 14.5px; text-decoration: none; transition: filter .15s, transform .12s var(--ease); }
+.btn:hover { filter: brightness(1.05); }
+.btn:active { transform: translateY(1px); }
+.btn[disabled] { opacity: .6; cursor: progress; }
+.btn-o { appearance: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 8px; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); font-weight: 600; font-size: 14px; text-decoration: none; }
+.btn-o:hover { border-color: var(--ink-3); }
+.btn-q { appearance: none; background: none; border: 0; padding: 6px 2px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
+.btn-q:hover { color: var(--ink); }
+.btn-q.danger { color: var(--error); }
+
+/* Formulare */
+.f { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; padding: 14px 16px; }
+.f label { display: grid; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--ink-3); }
+.f .err { flex-basis: 100%; margin: 0; color: var(--error); font-weight: 600; font-size: 14px; }
+
+/* Login */
+.login { max-width: 400px; margin: 12vh auto 0; }
+.login .cal { padding: 22px 22px 20px; }
+.login label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); margin: 18px 0 14px; }
+.login input { font: inherit; font-size: 16px; padding: 11px 12px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--ink); width: 100%; }
+.login input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.login .btn { width: 100%; min-height: 46px; }
+.login .err { color: var(--error); font-weight: 600; margin: 12px 0 0; }
+.login .small { color: var(--ink-3); font-size: 13.5px; margin: 16px 0 0; }
+
+.sk { height: 62px; border-top: 1px solid var(--line); background: linear-gradient(90deg, transparent, var(--accent-wash), transparent) var(--surface); background-size: 200% 100%; animation: sk 1.4s linear infinite; }
+@keyframes sk { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.toast { position: fixed; left: 50%; bottom: 20px; z-index: 20; max-width: calc(100% - 32px); padding: 12px 16px; border-radius: 10px; background: var(--toast); color: var(--bg); font-size: 14.5px; font-weight: 600; box-shadow: 0 8px 24px rgba(16, 24, 40, .22); transform: translate(-50%, 16px); opacity: 0; pointer-events: none; transition: opacity .2s, transform .35s var(--ease); }
+.toast.show { transform: translate(-50%, 0); opacity: 1; }
+.view { animation: in .3s var(--ease) both; }
+@keyframes in { from { opacity: .4; transform: translateY(-6px); } }
+
+@media (max-width: 760px) {
+  .track-head { display: none; }
+  .prow { grid-template-columns: minmax(0, 1fr) 20px; gap: 8px 12px; }
+  .prow .track { grid-column: 1; grid-row: 2; max-width: 300px; }
+  .prow .next { grid-column: 1; grid-row: 3; }
+  .prow > svg { grid-column: 2; grid-row: 1 / span 3; }
+  .soon { grid-template-columns: 76px 48px minmax(0, 1fr); }
+  .soon .tag { display: none; }
+  .grid2 { grid-template-columns: 1fr; }
+  .brow { grid-template-columns: 80px 1fr; }
+  .brow .bact { grid-column: 1 / -1; justify-content: flex-start; }
+  .top-r { margin-left: 0; width: 100%; justify-content: space-between; }
+  .nav { overflow-x: auto; scrollbar-width: none; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3h2BB3S_uo8oQ_3O3WMOEaC6DmBNXoNQHHucoHKWLKlre4/exec";</script>
+<script>
+(function () {
+  'use strict';
+
+  var app = document.getElementById('app');
+  var KEY = 'cb_admin_session';
+  var st = { session: null, ov: null, ovAt: 0, person: null, blocks: null, filter: 'alle', q: '', dirty: {}, saving: false, saveTimer: null, flashCreate: false };
+  try { st.session = localStorage.getItem(KEY); } catch (e) { /* privat */ }
+
+  var STEPS = ['Plugin gebucht', 'Plugin erledigt', 'Checkliste', 'Check-up', 'Läuft'];
+  var STEPS_SHORT = ['Gebucht', 'Plugin', 'Liste', 'Check-up', 'Läuft'];
+  var PHASES = ['Neu', 'Plugin-Call gebucht', 'Plugin-Call erledigt', 'Checkliste läuft', 'Check-up gebucht', 'Check-up erledigt', 'Läuft', 'Lässt nach', 'Inaktiv'];
+  var RISE = ['nicht registriert', 'registriert', 'eingezahlt', 'freigeschaltet'];
+  var CHECK = ['Fast Start', 'Trading Basics', 'Impulse', 'Live-Session', 'Erster Trade', 'Ergebnis gepostet'];
+  var CHECK_T = { 'Fast Start': 'Fast Start', 'Trading Basics': 'Trading Basics', 'Impulse': 'Impulse Bootcamp + Installation', 'Live-Session': 'Impulse-Live-Session', 'Erster Trade': 'Erster Trade', 'Ergebnis gepostet': 'Ergebnis in der Telegram-Gruppe gepostet' };
+  var STATUS = ['gebucht', 'erledigt', 'nicht erschienen', 'storniert'];
+  var KIND = { plugin: 'Plugin-Call', checkup: 'Check-up' };
+
+  // Leitfaden: [Text, Feld (optional), Art: say|do|action, Hinweis]
+  var PLUGIN_GUIDE = [
+    ['„Heute lernen wir uns kennen, ich zeig dir unseren Ablauf und danach bekommst du deine 48h-Checkliste.“', null, 'say'],
+    ['„Erzähl mal kurz von dir: Was machst du beruflich, wie sieht dein Alltag aus?“', 'Situation', 'say'],
+    ['„Seit wann bist du dabei und wie bist du dazu gekommen?“', 'Dabei seit', 'say'],
+    ['„Hast du schon getradet? Mit welcher Strategie? Läuft es profitabel?“', 'Trading-Erfahrung', 'say'],
+    ['Rise-Stand prüfen: registriert, eingezahlt, freigeschaltet? In der Telegram-Gruppe? Falls nicht: direkt hinzufügen.', 'Stand Rise', 'do'],
+    ['„Wie viel Zeit kannst du pro Woche realistisch investieren?“', 'Zeit pro Woche', 'say'],
+    ['„Was willst du in den nächsten 3 Monaten erreichen?“', 'Erwartung', 'say', 'Nur kurz, die Tiefe kommt im Check-up.'],
+    ['Ablauf erklären: „Bei uns startet jeder gleich: 48h-Checkliste, dann Check-up-Call.“', null, 'do'],
+    ['Checkliste freischalten und gemeinsam die 6 Punkte durchgehen. Nicht profitabel? Auf Impulse umstellen.', null, 'action:plugin'],
+    ['„Bis wann schaffst du das?“', 'Nächster Kontakt', 'say'],
+    ['Check-up-Call direkt buchen lassen: Button auf der persönlichen Seite, frühestens 2 Tage nach diesem Call.', null, 'do'],
+    ['Notizen vervollständigen.', 'Persönliche Punkte / Notizen', 'do'],
+  ];
+  var CHECKUP_GUIDE = [
+    ['„Wie liefen deine 48 Stunden?“ Was ist erledigt, wo hakt es?', null, 'say', 'Die Häkchen siehst du oben bei der Checkliste.'],
+    ['Offene Fragen klären (Impulse, Sessions, Trading).', 'Persönliche Punkte / Notizen', 'do'],
+    ['„Warum bist du dabei?“ Dann bis zu 7× „Und warum ist dir das wichtig?“, bis etwas Persönliches kommt.', 'Echtes Warum', 'say'],
+    ['„Wie sieht dein Leben in 3–5 Jahren aus? Wo wachst du auf, was machst du?“', 'Vision', 'say', 'Hausaufgabe: Vision Board.'],
+    ['Zielzahl festlegen: Startkapital → Ziel, mit dem Zinseszins-Plan.', 'Zielzahl', 'do'],
+    ['„Ich will dich da hinbringen. Darf ich dir in den Hintern treten, wenn du nachlässt?“', 'Erlaubnis zu pushen', 'say'],
+    ['Nächsten Kontakt festlegen.', 'Nächster Kontakt', 'do'],
+    ['Check-up als erledigt markieren.', null, 'action:checkup'],
+  ];
+  var LONG = { 'Situation': 1, 'Trading-Erfahrung': 1, 'Erwartung': 1, 'Echtes Warum': 1, 'Vision': 1, 'Persönliche Punkte / Notizen': 1 };
+
+  var ICON = {
+    back: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+    chev: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>',
+    search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
+    check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    copy: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
+  };
+
+  /* ---------------------------------------------------------------- Helfer */
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function utc(iso) { var p = iso.split('-').map(Number); return new Date(Date.UTC(p[0], p[1] - 1, p[2])); }
+  function fmt(iso, o) { return new Intl.DateTimeFormat('de-DE', Object.assign({ timeZone: 'UTC' }, o)).format(utc(iso)); }
+  function addDays(iso, n) { var d = utc(iso); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function dayLabel(iso, today) {
+    if (iso === today) return 'Heute';
+    if (iso === addDays(today, 1)) return 'Morgen';
+    return fmt(iso, { weekday: 'short', day: '2-digit', month: '2-digit' }).replace(',', '');
+  }
+  function shortDate(iso) { return fmt(iso, { weekday: 'short', day: '2-digit', month: '2-digit' }).replace(',', ''); }
+
+  var toastTimer;
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 4200);
+  }
+
+  function call(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    if (window.google && google.script && google.script.run) {
+      return new Promise(function (resolve, reject) {
+        var r = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
+        r[fn].apply(r, args);
+      });
+    }
+    if (window.API_URL) {
+      return fetch(window.API_URL, { method: 'POST', body: JSON.stringify({ fn: fn, args: args }) })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (res) { if (res && res.__error) throw new Error(res.__error); return res; });
+    }
+    return Promise.reject(new Error('offline'));
+  }
+
+  // Admin-Aufruf mit Sitzung; abgelaufene Sitzung → zurück zum Login
+  function admin(fn) {
+    var args = [fn, st.session].concat(Array.prototype.slice.call(arguments, 1));
+    return call.apply(null, args).catch(function (err) {
+      if (err && /AUTH/.test(String(err.message || err))) {
+        logout(true);
+        throw new Error('AUTH');
+      }
+      throw err;
+    });
+  }
+
+  function logout(expired) {
+    if (st.session) call('apiAdminLogout', st.session).catch(function () {});
+    st.session = null; st.ov = null; st.person = null; st.blocks = null;
+    try { localStorage.removeItem(KEY); } catch (e) { /* egal */ }
+    renderLogin(expired ? 'Bitte melde dich neu an.' : '');
+  }
+
+  /* ---------------------------------------------------------------- Login */
+  function renderLogin(msg) {
+    document.title = 'Anmelden · Call-Buchung';
+    app.innerHTML = '<div class="login view"><div class="cal"><div class="brand"><i></i>Call-Buchung</div>' +
+      '<h1 style="margin-top:14px">Admin-Bereich</h1><p class="meta"><span>Termine und Teampartner verwalten</span></p>' +
+      '<form id="login"><label>Passwort<input type="password" name="pw" autocomplete="current-password" required></label>' +
+      '<button class="btn" type="submit">Anmelden</button><p class="err" role="alert"' + (msg ? '' : ' hidden') + '>' + esc(msg) + '</p></form>' +
+      '<p class="small">Das Passwort legst du im Google Sheet fest: Call-Buchung → Admin-Passwort festlegen.</p></div></div>';
+    var input = app.querySelector('input[name=pw]');
+    if (input) input.focus();
+  }
+
+  function doLogin(form) {
+    var pw = form.pw.value;
+    var btn = form.querySelector('.btn');
+    var err = form.querySelector('.err');
+    if (!pw) return;
+    btn.disabled = true; btn.textContent = 'Wird geprüft …'; err.hidden = true;
+    call('apiAdminLogin', pw).then(function (res) {
+      if (res && res.ok) {
+        st.session = res.session;
+        try { localStorage.setItem(KEY, res.session); } catch (e) { /* egal */ }
+        route();
+      } else {
+        err.textContent = (res && res.msg) || 'Das hat nicht geklappt.'; err.hidden = false;
+        btn.disabled = false; btn.textContent = 'Anmelden'; form.pw.select();
+      }
+    }).catch(function () {
+      err.textContent = 'Keine Verbindung. Bitte versuch es nochmal.'; err.hidden = false;
+      btn.disabled = false; btn.textContent = 'Anmelden';
+    });
+  }
+
+  /* ---------------------------------------------------------------- Rahmen */
+  function shell(active, inner, wide) {
+    var nav = [['#/', 'Übersicht', 'home'], ['#/termine', 'Termine', 'termine'], ['#/sperrzeiten', 'Sperrzeiten', 'sperr']];
+    return '<header class="topbar"><div class="brand"><i></i>Call-Buchung</div><nav class="nav" aria-label="Bereiche">' +
+      nav.map(function (n) { return '<a href="' + n[0] + '"' + (active === n[2] ? ' aria-current="page"' : '') + '>' + n[1] + '</a>'; }).join('') +
+      '</nav><div class="top-r"><span class="saved" id="saved" aria-live="polite"></span><button type="button" class="btn-q" data-reload>Neu laden</button>' +
+      '<button type="button" class="btn-q" data-logout>Abmelden</button></div></header>' +
+      '<main class="view' + (wide ? '' : ' narrow') + '">' + inner + '</main>';
+  }
+
+  function skeleton(active, title) {
+    var rows = '';
+    for (var i = 0; i < 5; i++) rows += '<div class="sk"></div>';
+    app.innerHTML = shell(active, '<h1>' + esc(title) + '</h1><div class="cal" style="margin-top:20px"><div class="band">&nbsp;</div>' + rows + '</div>', true);
+  }
+
+  function loadOverview(force) {
+    if (!force && st.ov && Date.now() - st.ovAt < 60000) return Promise.resolve(st.ov);
+    return admin('apiAdminOverview').then(function (res) { st.ov = res; st.ovAt = Date.now(); return res; });
+  }
+
+  function failView(active, err) {
+    if (err && err.message === 'AUTH') return;
+    app.innerHTML = shell(active, '<h1>Das hat nicht geklappt</h1><p class="meta"><span>Die Daten konnten nicht geladen werden.</span></p>' +
+      '<p style="margin-top:18px"><button type="button" class="btn" data-reload>Neu laden</button></p>', true);
+  }
+
+  /* ------------------------------------------------------- Fortschritts-Strecke */
+  function stages(p) {
+    var plugin = p.plugin, ck = p.checkup;
+    return [
+      plugin || p.pluginDone ? 'done' : '',
+      p.pluginDone ? 'done' : '',
+      'pips',
+      ck && ck.status === 'erledigt' ? 'done' : ck && ck.status === 'gebucht' ? 'half' : '',
+      p.phase === 'Läuft' ? 'done' : '',
+    ];
+  }
+
+  function trackHtml(p, big) {
+    var s = stages(p);
+    var reached = 0;
+    s.forEach(function (x, i) { if (x === 'done' || (x === 'pips' && p.checks >= 6) || (x === 'half')) reached = i; });
+    if (p.pluginDone && p.checks > 0 && reached < 2) reached = 2;
+    var pct = reached === 0 && !s[0] ? 0 : (reached / 4) * 80;
+    var html = '<div class="track' + (big ? ' big' : '') + '" aria-hidden="true"><span class="fill" style="width:' + pct + '%"></span>';
+    s.forEach(function (x) {
+      if (x === 'pips') {
+        var pips = '';
+        for (var i = 0; i < 6; i++) pips += '<i' + (i < p.checks ? ' class="on"' : '') + '></i>';
+        html += '<span class="st pips">' + pips + '</span>';
+      } else {
+        html += '<span class="st ' + x + '"></span>';
+      }
+    });
+    return html + '</div>';
+  }
+
+  function trackText(p) {
+    var s = stages(p);
+    return STEPS.map(function (name, i) {
+      if (i === 2) return 'Checkliste ' + p.checks + ' von 6';
+      return name + (s[i] === 'done' ? ' erledigt' : s[i] === 'half' ? ' gebucht' : ' offen');
+    }).join(', ');
+  }
+
+  // Was als Nächstes ansteht – mit Dringlichkeit für die Sortierung
+  function nextStep(p, today) {
+    var b = p.checkup || p.plugin;
+    var kind = p.checkup ? 'Check-up' : 'Plugin-Call';
+    if (p.phase === 'Lässt nach' || p.phase === 'Inaktiv') return { t: p.phase + (p.next ? ' · Kontakt: ' + p.next : ''), c: 'warn', o: 1 };
+    if (b && b.status === 'gebucht' && b.past) return { t: kind + ' war ' + shortDate(b.date) + ' – Status setzen', c: 'warn', o: 0 };
+    if (b && b.status === 'gebucht') return { t: kind + ' ' + dayLabel(b.date, today) + ' ' + b.time, c: 'act', o: 2, k: b.date + b.time };
+    if (b && b.status === 'nicht erschienen') return { t: kind + ' verpasst – neu ansetzen', c: 'warn', o: 1 };
+    if (!p.plugin && !p.pluginDone) return { t: 'Noch kein Plugin-Call', c: '', o: 5 };
+    if (p.pluginDone && !p.checkup) return { t: 'Checkliste ' + p.checks + '/6 · Check-up noch nicht gebucht', c: '', o: 3 };
+    if (p.checkup && p.checkup.status === 'erledigt') return { t: p.phase === 'Läuft' ? 'Läuft' + (p.next ? ' · Kontakt: ' + p.next : '') : 'Check-up erledigt' + (p.next ? ' · Kontakt: ' + p.next : ''), c: '', o: 4 };
+    return { t: p.phase, c: '', o: 4 };
+  }
+
+  function group(p) {
+    var i = PHASES.indexOf(p.phase);
+    if (p.phase === 'Lässt nach' || p.phase === 'Inaktiv') return 'haengt';
+    if (i <= 0) return 'neu';
+    if (i === 1) return 'plugin';
+    if (i === 2 || i === 3) return 'liste';
+    if (i === 4) return 'checkup';
+    return 'laeuft';
+  }
+
+  var FILTERS = [['alle', 'Alle'], ['neu', 'Neu'], ['plugin', 'Plugin gebucht'], ['liste', 'Checkliste'], ['checkup', 'Check-up gebucht'], ['laeuft', 'Läuft'], ['haengt', 'Lässt nach']];
+
+  function renderOverview() {
+    document.title = 'Übersicht · Call-Buchung';
+    if (!st.ov) skeleton('home', 'Übersicht');
+    loadOverview().then(function (ov) {
+      var today = ov.today;
+      var soon = ov.bookings.filter(function (b) { return b.status === 'gebucht' && !b.past && b.date <= addDays(today, 7); });
+      var html = '<h1>Übersicht</h1><p class="meta"><span>' + ov.partners.length + ' Teampartner</span><span>' + soon.length + ' Calls in den nächsten 7 Tagen</span></p>';
+      html += '<div class="cal" style="margin-top:20px"><h2 class="band"><span>Heute & demnächst</span><span class="cnt">nächste 7 Tage</span></h2><ul class="rows">' +
+        (soon.length ? soon.map(function (b) {
+          return '<li><a class="soon" href="#/p/' + esc(b.token) + '"><span class="d">' + esc(dayLabel(b.date, today)) + '</span><span class="t">' + esc(b.time) +
+            '</span><span class="n">' + esc(b.name) + '</span><span class="tag' + (b.kind === 'checkup' ? '' : ' q') + '">' + KIND[b.kind] + '</span></a></li>';
+        }).join('') : '<li class="empty">Keine Calls in den nächsten 7 Tagen.</li>') + '</ul></div>';
+
+      var counts = {};
+      ov.partners.forEach(function (p) { var g = group(p); counts[g] = (counts[g] || 0) + 1; });
+      counts.alle = ov.partners.length;
+      html += '<div class="tools"><label class="search">' + ICON.search + '<input type="search" id="q" placeholder="Name, E-Mail, Telegram" aria-label="Suchen" value="' + esc(st.q) + '"></label>' +
+        '<div class="chips" role="group" aria-label="Filter">' + FILTERS.map(function (f) {
+          return '<button type="button" class="chip" data-filter="' + f[0] + '" aria-pressed="' + (st.filter === f[0]) + '">' + f[1] + '<b>' + (counts[f[0]] || 0) + '</b></button>';
+        }).join('') + '</div><button type="button" class="btn-o" data-create style="margin-left:auto">+ Person anlegen</button></div>';
+      html += '<div id="create"></div>';
+      html += '<div class="cal"><div class="track-head"><span>Teampartner</span><span class="labels">' + STEPS_SHORT.map(function (s, i) { return '<span title="' + STEPS[i] + '">' + s + '</span>'; }).join('') +
+        '</span><span>Nächster Schritt</span><span></span></div><ul class="rows" id="plist"></ul></div>';
+      app.innerHTML = shell('home', html, true);
+      paintList();
+      if (st.flashCreate) { st.flashCreate = false; openCreate(); }
+    }).catch(function (err) { failView('home', err); });
+  }
+
+  function paintList() {
+    var ov = st.ov;
+    var q = st.q.trim().toLowerCase();
+    var list = ov.partners.filter(function (p) {
+      if (st.filter !== 'alle' && group(p) !== st.filter) return false;
+      if (!q) return true;
+      return [p.name, p.email, p.telegram].join(' ').toLowerCase().indexOf(q) !== -1;
+    }).map(function (p) { return { p: p, n: nextStep(p, ov.today) }; });
+    list.sort(function (a, b) {
+      if (a.n.o !== b.n.o) return a.n.o - b.n.o;
+      if (a.n.k && b.n.k && a.n.k !== b.n.k) return a.n.k < b.n.k ? -1 : 1;
+      return String(a.p.name).localeCompare(String(b.p.name), 'de');
+    });
+    var el = document.getElementById('plist');
+    if (!el) return;
+    el.innerHTML = list.length ? list.map(function (x) {
+      var p = x.p;
+      var sub = [p.member === 'Bestand' ? 'Bestand' : 'neu', p.telegram].filter(Boolean).join(' · ');
+      return '<li><a class="prow" href="#/p/' + esc(p.token) + '" aria-label="' + esc(p.name + ': ' + trackText(p) + '. ' + x.n.t) + '">' +
+        '<span class="pname"><b>' + esc(p.name) + '</b><small>' + esc(sub) + '</small></span>' + trackHtml(p) +
+        '<span class="next ' + x.n.c + '">' + esc(x.n.t) + '</span>' + ICON.chev + '</a></li>';
+    }).join('') : '<li class="empty">' + (ov.partners.length ? 'Niemand passt zu dieser Auswahl.' : 'Noch keine Teampartner. Sobald jemand bucht, steht er hier.') + '</li>';
+  }
+
+  function openCreate() {
+    var box = document.getElementById('create');
+    if (!box) return;
+    box.innerHTML = '<div class="cal" style="margin-bottom:16px"><h2 class="band"><span>Person anlegen</span></h2><form class="f" id="createForm">' +
+      '<label>Name<input name="name" required maxlength="80"></label><label>E-Mail<input name="email" type="email" maxlength="120"></label>' +
+      '<label>Telegram<input name="telegram" placeholder="@name" maxlength="60"></label>' +
+      '<label>Neu / Bestand<select name="member"><option>Bestand</option><option value="neu">neu</option></select></label>' +
+      '<button class="btn" type="submit">Anlegen</button><button type="button" class="btn-q" data-create-cancel>Abbrechen</button><p class="err" role="alert" hidden></p></form></div>';
+    box.querySelector('input').focus();
+  }
+
+  function doCreate(form) {
+    var btn = form.querySelector('.btn'), err = form.querySelector('.err');
+    btn.disabled = true; err.hidden = true;
+    admin('apiAdminCreate', { name: form.name.value, email: form.email.value, telegram: form.telegram.value, member: form.member.value }).then(function (res) {
+      btn.disabled = false;
+      if (!res || !res.ok) { err.textContent = (res && res.msg) || 'Das hat nicht geklappt.'; err.hidden = false; return; }
+      st.ov = null;
+      location.hash = '#/p/' + res.token;
+    }).catch(function () { btn.disabled = false; err.textContent = 'Keine Verbindung.'; err.hidden = false; });
+  }
+
+  /* ------------------------------------------------------------------ Akte */
+  function renderPerson(token) {
+    document.title = 'Akte · Call-Buchung';
+    skeleton('home', 'Akte');
+    admin('apiAdminPerson', token).then(function (res) {
+      if (!res || !res.ok) { app.innerHTML = shell('home', '<a class="back" href="#/">' + ICON.back + 'Übersicht</a><h1>Nicht gefunden</h1><p class="meta"><span>' + esc((res && res.msg) || '') + '</span></p>'); return; }
+      st.person = res;
+      paintPerson();
+    }).catch(function (err) { failView('home', err); });
+  }
+
+  function paintPerson() {
+    var r = st.person, f = r.fields;
+    document.title = f['Name'] + ' · Call-Buchung';
+    var plugin = latest(r.bookings, 'plugin'), checkup = latest(r.bookings, 'checkup');
+    var summary = { plugin: plugin, checkup: checkup, pluginDone: r.pluginDone, phase: f['Phase'] || 'Neu', checks: CHECK.filter(function (c) { return f[c] === true; }).length };
+    var html = '<a class="back" href="#/">' + ICON.back + 'Übersicht</a>';
+    html += '<div class="head"><div class="grow"><h1>' + esc(f['Name']) + '</h1><p class="meta">' +
+      '<span>' + esc(f['Neu / Bestand'] || 'neu') + '</span>' +
+      (f['Telegram'] ? '<span><a href="https://t.me/' + esc(String(f['Telegram']).replace(/^@/, '')) + '" target="_blank" rel="noopener">' + esc(f['Telegram']) + '</a></span>' : '') +
+      (f['E-Mail'] ? '<span><a href="mailto:' + esc(f['E-Mail']) + '">' + esc(f['E-Mail']) + '</a></span>' : '') +
+      (r.created ? '<span>seit ' + esc(String(r.created).slice(0, 10)) + '</span>' : '') + '</p></div>' +
+      '<label class="pill-select">Phase<select data-field="Phase">' + PHASES.map(function (p) { return '<option' + (p === (f['Phase'] || 'Neu') ? ' selected' : '') + '>' + p + '</option>'; }).join('') + '</select></label></div>';
+
+    html += '<div class="cal"><div class="trackcard">' + trackHtml(summary, true) + '<div class="track-labels">' + STEPS.map(function (s, i) {
+      var on = stages(summary)[i] === 'done' || (i === 2 && summary.checks >= 6);
+      return '<span' + (on ? ' class="on"' : '') + '>' + (i === 2 ? 'Checkliste ' + summary.checks + '/6' : s) + '</span>';
+    }).join('') + '</div></div><div class="linkrow"><span>Persönlicher Link</span><input id="plink" readonly value="' + esc(r.link) + '" aria-label="Persönlicher Link">' +
+      '<button type="button" class="btn-o" data-copy>' + ICON.copy + '<span>Kopieren</span></button></div></div>';
+
+    // Calls
+    html += '<section class="sec cal"><h2 class="band"><span>Calls</span></h2><ul class="rows">' +
+      (r.bookings.length ? r.bookings.slice().reverse().map(bookingRow).join('') : '<li class="empty">Noch kein Call gebucht. Schick den Link oben, dann bucht die Person selbst.</li>') + '</ul></section>';
+
+    // Plugin-Leitfaden
+    html += '<section class="sec cal"><h2 class="band"><span>Plugin-Call · Leitfaden</span><span class="cnt">30–45 Min</span></h2><ol class="guide">' +
+      PLUGIN_GUIDE.map(function (g, i) { return guideRow(g, i, plugin, checkup); }).join('') + '</ol></section>';
+
+    // Checkliste
+    html += '<section class="sec cal"><h2 class="band"><span>48h-Checkliste</span><span class="cnt">' + (r.pluginDone ? summary.checks + ' von 6 · hakt die Person selbst ab' : 'noch gesperrt bis zum Plugin-Call') + '</span></h2>' +
+      CHECK.map(function (c) {
+        return '<label class="check"><input type="checkbox" data-field="' + esc(c) + '"' + (f[c] === true ? ' checked' : '') + '>' + esc(CHECK_T[c]) + '</label>';
+      }).join('') + '<div class="check" style="cursor:default"><span>Check-up-Call</span><small>' +
+      (checkup ? esc(shortDate(checkup.date) + ' ' + checkup.time + ' · ' + checkup.status) : r.checkupFrom ? 'buchbar ab ' + esc(shortDate(r.checkupFrom.date) + ' ' + r.checkupFrom.time) : r.pluginDone ? 'noch nicht gebucht' : '–') +
+      '</small></div></section>';
+
+    // Check-up-Leitfaden
+    html += '<section class="sec cal"><h2 class="band"><span>Check-up-Call · Leitfaden</span><span class="cnt">bis 60 Min</span></h2><ol class="guide">' +
+      CHECKUP_GUIDE.map(function (g, i) { return guideRow(g, i, plugin, checkup); }).join('') + '</ol></section>';
+
+    // Stammdaten
+    html += '<section class="sec cal"><h2 class="band"><span>Stammdaten</span></h2><div class="grid2">' +
+      field('Name') + field('E-Mail', 'email') + field('Telegram') +
+      '<label class="field"><span>Neu / Bestand</span><select data-field="Neu / Bestand"><option' + (f['Neu / Bestand'] === 'neu' ? ' selected' : '') + '>neu</option><option' + (f['Neu / Bestand'] === 'Bestand' ? ' selected' : '') + '>Bestand</option></select></label>' +
+      '</div></section>';
+
+    app.innerHTML = shell('home', html);
+    setSaved(st.saving ? 'busy' : '');
+  }
+
+  function latest(list, kind) {
+    var l = list.filter(function (b) { return b.kind === kind && b.status !== 'storniert'; });
+    return l.length ? l[l.length - 1] : null;
+  }
+
+  function field(name, type) {
+    var v = st.person.fields[name];
+    if (name === 'Stand Rise') {
+      return '<label class="field"><span>' + esc(name) + '</span><select data-field="Stand Rise"><option value="">–</option>' +
+        RISE.map(function (x) { return '<option' + (x === v ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label>';
+    }
+    if (name === 'Erlaubnis zu pushen') {
+      return '<label class="check" style="padding:10px 0 0"><input type="checkbox" data-field="Erlaubnis zu pushen"' + (v === true ? ' checked' : '') + '>Erlaubnis bekommen</label>';
+    }
+    if (LONG[name]) return '<label class="field"><span>' + esc(name) + '</span><textarea data-field="' + esc(name) + '" rows="3" maxlength="4000">' + esc(v) + '</textarea></label>';
+    return '<label class="field"><span>' + esc(name) + '</span><input data-field="' + esc(name) + '" type="' + (type || 'text') + '" maxlength="120" value="' + esc(v) + '"></label>';
+  }
+
+  function guideRow(g, i, plugin, checkup) {
+    var html = '<li><span class="num">' + (i + 1) + '</span><div><p class="q' + (g[2] === 'say' ? ' say' : '') + '">' + esc(g[0]) + '</p>' +
+      (g[3] ? '<p class="hint">' + esc(g[3]) + '</p>' : '');
+    if (g[1]) html += field(g[1]);
+    if (g[2] === 'action:plugin') {
+      if (st.person.pluginDone) html += '<p class="done-note">' + ICON.check + 'Checkliste ist freigeschaltet.</p>';
+      else html += '<p style="margin:10px 0 0"><button type="button" class="btn" data-done="plugin">Plugin-Call erledigt – Checkliste freischalten</button></p>';
+    }
+    if (g[2] === 'action:checkup') {
+      if (checkup && checkup.status === 'erledigt') html += '<p class="done-note">' + ICON.check + 'Check-up ist erledigt.</p>';
+      else if (checkup) html += '<p style="margin:10px 0 0"><button type="button" class="btn" data-done="checkup">Check-up erledigt</button></p>';
+      else html += '<p class="hint">Noch kein Check-up-Call gebucht.</p>';
+    }
+    return html + '</div></li>';
+  }
+
+  function bookingRow(b) {
+    var d = st.ov ? dayLabel(b.date, st.ov.today) : shortDate(b.date);
+    return '<li class="brow"><span class="d"><b>' + esc(d) + '</b><small>' + esc(b.time + '–' + b.end) + '</small></span>' +
+      '<span><span class="tag' + (b.kind === 'checkup' ? '' : ' q') + '">' + KIND[b.kind] + '</span></span>' +
+      '<span class="bact">' + (b.status === 'gebucht' ? '<button type="button" class="btn-o" data-status="erledigt" data-id="' + esc(b.id) + '">' + ICON.check + 'Erledigt</button>' : '') +
+      '<select data-booking="' + esc(b.id) + '" aria-label="Status">' + STATUS.map(function (s) { return '<option' + (s === b.status ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select></span></li>';
+  }
+
+  // Automatisch speichern, kurz nach dem Tippen
+  function queueSave(name, value) {
+    if (!st.person) return;
+    st.person.fields[name] = value;
+    st.dirty[name] = value;
+    app.querySelectorAll('[data-field]').forEach(function (el) {
+      if (el.getAttribute('data-field') !== name || el === document.activeElement) return;
+      if (el.type === 'checkbox') el.checked = value === true; else el.value = value;
+    });
+    setSaved('busy', 'Ungespeichert …');
+    clearTimeout(st.saveTimer);
+    st.saveTimer = setTimeout(flushSave, 900);
+  }
+
+  function flushSave() {
+    clearTimeout(st.saveTimer);
+    var fields = st.dirty;
+    if (!st.person || !Object.keys(fields).length) return Promise.resolve();
+    st.dirty = {};
+    st.saving = true;
+    setSaved('busy', 'Speichert …');
+    var token = st.person.token;
+    return admin('apiAdminSave', token, fields).then(function (res) {
+      st.saving = false;
+      if (!res || !res.ok) { setSaved('err', 'Nicht gespeichert'); toast((res && res.msg) || 'Nicht gespeichert.'); return; }
+      st.ov = null; // Übersicht beim nächsten Mal neu laden
+      var t = new Date();
+      setSaved('', 'Gespeichert ' + String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'));
+      if (fields['Phase'] !== undefined) refreshPerson();
+    }).catch(function (err) {
+      st.saving = false;
+      if (err && err.message === 'AUTH') return;
+      Object.keys(fields).forEach(function (k) { if (st.dirty[k] === undefined) st.dirty[k] = fields[k]; });
+      setSaved('err', 'Nicht gespeichert');
+      toast('Keine Verbindung – Änderungen werden erneut gesendet.');
+      st.saveTimer = setTimeout(flushSave, 4000);
+    });
+  }
+
+  function setSaved(cls, text) {
+    var el = document.getElementById('saved');
+    if (!el) return;
+    el.className = 'saved' + (cls ? ' ' + cls : '');
+    if (text !== undefined) el.textContent = text;
+  }
+
+  function refreshPerson() {
+    if (!st.person) return;
+    var token = st.person.token;
+    var y = window.scrollY;
+    return admin('apiAdminPerson', token).then(function (res) {
+      if (res && res.ok && st.person && st.person.token === token) { st.person = res; paintPerson(); window.scrollTo(0, y); }
+    }).catch(function () {});
+  }
+
+  function setStatus(id, status) {
+    setSaved('busy', 'Speichert …');
+    return flushSave().then(function () { return admin('apiAdminSetStatus', id, status); }).then(function (res) {
+      if (!res || !res.ok) { toast((res && res.msg) || 'Das hat nicht geklappt.'); setSaved('err', 'Nicht gespeichert'); return; }
+      st.ov = null;
+      setSaved('', 'Gespeichert');
+      toast(status === 'erledigt' ? 'Als erledigt markiert.' : status === 'storniert' ? 'Termin abgesagt, Kalendertermin gelöscht.' : 'Status: ' + status);
+      if (st.person) return refreshPerson();
+      return renderTermine();
+    }).catch(function (err) { if (!err || err.message !== 'AUTH') toast('Keine Verbindung.'); });
+  }
+
+  function markDone(kind) {
+    var b = latest(st.person.bookings, kind);
+    if (b && b.status === 'gebucht') return setStatus(b.id, 'erledigt');
+    if (kind === 'plugin') {
+      // Call ohne Buchung (z. B. spontan): Phase setzen schaltet die Checkliste frei
+      queueSave('Phase', 'Plugin-Call erledigt');
+      return flushSave();
+    }
+  }
+
+  /* --------------------------------------------------------------- Termine */
+  function renderTermine() {
+    document.title = 'Termine · Call-Buchung';
+    if (!st.ov) skeleton('termine', 'Termine');
+    return loadOverview(true).then(function (ov) {
+      var today = ov.today;
+      var groups = [
+        ['Heute', ov.bookings.filter(function (b) { return b.date === today; })],
+        ['Demnächst', ov.bookings.filter(function (b) { return b.date > today; })],
+        ['Vergangen · letzte 30 Tage', ov.bookings.filter(function (b) { return b.date < today && b.date >= addDays(today, -30); }).reverse()],
+      ];
+      var html = '<h1>Termine</h1><p class="meta"><span>Alle Plugin- und Check-up-Calls</span></p>';
+      groups.forEach(function (g) {
+        html += '<section class="sec cal" style="margin-top:20px"><h2 class="band"><span>' + g[0] + '</span><span class="cnt">' + g[1].length + '</span></h2><ul class="rows">' +
+          (g[1].length ? g[1].map(function (b) {
+            return '<li class="brow"><span class="d"><b>' + esc(dayLabel(b.date, today)) + '</b><small>' + esc(b.time + '–' + b.end) + '</small></span>' +
+              '<span><a href="#/p/' + esc(b.token) + '" style="font-weight:600">' + esc(b.name) + '</a> <span class="tag' + (b.kind === 'checkup' ? '' : ' q') + '">' + KIND[b.kind] + '</span>' +
+              (b.status === 'gebucht' && b.past ? ' <span class="tag warn">Status setzen</span>' : '') + '</span>' +
+              '<span class="bact">' + (b.status === 'gebucht' ? '<button type="button" class="btn-o" data-status="erledigt" data-id="' + esc(b.id) + '">' + ICON.check + 'Erledigt</button>' : '') +
+              '<select data-booking="' + esc(b.id) + '" aria-label="Status">' + STATUS.map(function (s) { return '<option' + (s === b.status ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select></span></li>';
+          }).join('') : '<li class="empty">Keine.</li>') + '</ul></section>';
+      });
+      app.innerHTML = shell('termine', html);
+    }).catch(function (err) { failView('termine', err); });
+  }
+
+  /* ----------------------------------------------------------- Sperrzeiten */
+  function renderBlocks() {
+    document.title = 'Sperrzeiten · Call-Buchung';
+    skeleton('sperr', 'Sperrzeiten');
+    admin('apiAdminBlocks').then(function (res) {
+      st.blocks = res.blocks || [];
+      var html = '<h1>Sperrzeiten</h1><p class="meta"><span>Urlaub oder feste Termine – dann kann dort niemand buchen</span></p>';
+      html += '<section class="sec cal" style="margin-top:20px"><h2 class="band"><span>Neue Sperrzeit</span></h2><form class="f" id="blockForm">' +
+        '<label>Datum<input type="date" name="date" required></label><label>Von<input type="time" name="from" step="900"></label>' +
+        '<label>Bis<input type="time" name="to" step="900"></label><label style="flex:1 1 200px">Notiz (nur für dich)<input name="note" maxlength="120" placeholder="z. B. Urlaub"></label>' +
+        '<button class="btn" type="submit">Sperren</button><p class="err" role="alert" hidden></p></form>' +
+        '<p class="hint" style="margin:0;padding:0 16px 14px;color:var(--ink-3);font-size:13px">Ohne Uhrzeit wird der ganze Tag gesperrt. Termine in deinem Google Kalender sperren automatisch.</p></section>';
+      html += '<section class="sec cal"><h2 class="band"><span>Gesperrt</span><span class="cnt">' + st.blocks.length + '</span></h2><ul class="rows">' +
+        (st.blocks.length ? st.blocks.map(function (b) {
+          return '<li class="brow"><span class="d"><b>' + esc(shortDate(b.date)) + '</b><small>' + esc(b.from ? b.from + (b.to ? '–' + b.to : '') : 'ganzer Tag') + '</small></span>' +
+            '<span>' + esc(b.note || '') + '</span><span class="bact"><button type="button" class="btn-q danger" data-unblock="' + b.row + '" data-date="' + esc(b.date) + '">Entfernen</button></span></li>';
+        }).join('') : '<li class="empty">Keine Sperrzeiten.</li>') + '</ul></section>';
+      app.innerHTML = shell('sperr', html);
+    }).catch(function (err) { failView('sperr', err); });
+  }
+
+  function doBlock(form) {
+    var btn = form.querySelector('.btn'), err = form.querySelector('.err');
+    btn.disabled = true; err.hidden = true;
+    admin('apiAdminAddBlock', { date: form.date.value, from: form.from.value, to: form.to.value, note: form.note.value }).then(function (res) {
+      btn.disabled = false;
+      if (!res || !res.ok) { err.textContent = (res && res.msg) || 'Das hat nicht geklappt.'; err.hidden = false; return; }
+      toast('Gesperrt.');
+      renderBlocks();
+    }).catch(function () { btn.disabled = false; err.textContent = 'Keine Verbindung.'; err.hidden = false; });
+  }
+
+  /* --------------------------------------------------------------- Routing */
+  function route() {
+    if (!st.session) return renderLogin('');
+    var h = location.hash || '#/';
+    var m = h.match(/^#\/p\/([0-9a-f-]{36})$/);
+    if (m) return renderPerson(m[1]);
+    st.person = null;
+    if (h === '#/termine') return renderTermine();
+    if (h === '#/sperrzeiten') return renderBlocks();
+    return renderOverview();
+  }
+
+  window.addEventListener('hashchange', function () {
+    if (st.person && Object.keys(st.dirty).length) flushSave();
+    route();
+    window.scrollTo(0, 0);
+  });
+  window.addEventListener('beforeunload', function (e) {
+    if (Object.keys(st.dirty).length || st.saving) { flushSave(); e.preventDefault(); e.returnValue = ''; }
+  });
+
+  app.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (e.target.id === 'login') doLogin(e.target);
+    if (e.target.id === 'createForm') doCreate(e.target);
+    if (e.target.id === 'blockForm') doBlock(e.target);
+  });
+
+  app.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.id === 'q') { st.q = t.value; paintList(); return; }
+    var name = t.getAttribute('data-field');
+    if (name && t.type !== 'checkbox' && t.tagName !== 'SELECT') queueSave(name, t.value);
+  });
+
+  app.addEventListener('change', function (e) {
+    var t = e.target;
+    var name = t.getAttribute('data-field');
+    if (name && t.type === 'checkbox') { queueSave(name, t.checked); flushSave(); }
+    else if (name && t.tagName === 'SELECT') { queueSave(name, t.value); flushSave(); }
+    else if (t.hasAttribute('data-booking')) setStatus(t.getAttribute('data-booking'), t.value);
+  });
+
+  app.addEventListener('focusout', function (e) {
+    if (e.target.getAttribute && e.target.getAttribute('data-field') && Object.keys(st.dirty).length) flushSave();
+  });
+
+  app.addEventListener('click', function (e) {
+    var t = e.target.closest('button');
+    if (!t) return;
+    if (t.hasAttribute('data-logout')) logout(false);
+    else if (t.hasAttribute('data-reload')) { st.ov = null; route(); }
+    else if (t.hasAttribute('data-filter')) {
+      st.filter = t.getAttribute('data-filter');
+      app.querySelectorAll('[data-filter]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === t)); });
+      paintList();
+    }
+    else if (t.hasAttribute('data-create')) openCreate();
+    else if (t.hasAttribute('data-create-cancel')) document.getElementById('create').innerHTML = '';
+    else if (t.hasAttribute('data-status')) { t.disabled = true; setStatus(t.getAttribute('data-id'), t.getAttribute('data-status')); }
+    else if (t.hasAttribute('data-done')) { t.disabled = true; t.textContent = 'Wird gespeichert …'; markDone(t.getAttribute('data-done')); }
+    else if (t.hasAttribute('data-unblock')) {
+      if (!confirm('Diese Sperrzeit entfernen?')) return;
+      admin('apiAdminRemoveBlock', Number(t.getAttribute('data-unblock')), t.getAttribute('data-date')).then(function (res) {
+        if (!res || !res.ok) toast((res && res.msg) || 'Das hat nicht geklappt.'); else toast('Entfernt.');
+        renderBlocks();
+      }).catch(function () { toast('Keine Verbindung.'); });
+    }
+    else if (t.hasAttribute('data-copy')) {
+      var input = document.getElementById('plink');
+      var label = t.querySelector('span');
+      var done = function () { label.textContent = 'Kopiert'; setTimeout(function () { label.textContent = 'Kopieren'; }, 1800); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(input.value).then(done, function () { input.select(); document.execCommand('copy'); done(); });
+      else { input.select(); document.execCommand('copy'); done(); }
+    }
+  });
+
+  route();
+})();
+</script>
+</body>
+</html>
