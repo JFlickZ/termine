@@ -15,7 +15,7 @@
   --bg: #f4f5f7; --surface: #ffffff; --band: #e9ecf1; --line: #e3e6ec; --line-strong: #cfd5de;
   --ink: #1d2330; --ink-2: #4a5263; --ink-3: #636b7c;
   --accent: #e0802b; --accent-ink: #9c4c0b; --accent-soft: rgba(224, 128, 43, 0.12); --accent-wash: rgba(224, 128, 43, 0.05);
-  --on-accent: #1d1206; --taken: #c3c9d3; --error: #b42318; --ok: #1f7a3d; --toast: #1d2330;
+  --on-accent: #1d1206; --taken: #c3c9d3; --error: #b42318; --toast: #1d2330;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   color-scheme: light;
 }
@@ -24,7 +24,7 @@
     --bg: #111419; --surface: #181c23; --band: #21262f; --line: #2a303b; --line-strong: #3a414e;
     --ink: #e7eaf0; --ink-2: #b9c0cc; --ink-3: #959dab;
     --accent: #f0954a; --accent-ink: #f6ad6e; --accent-soft: rgba(240, 149, 74, 0.16); --accent-wash: rgba(240, 149, 74, 0.06);
-    --on-accent: #1a1006; --taken: #454c59; --error: #f97066; --ok: #5fd08a; --toast: #e7eaf0;
+    --on-accent: #1a1006; --taken: #454c59; --error: #f97066; --toast: #e7eaf0;
     color-scheme: dark;
   }
 }
@@ -39,7 +39,15 @@ svg { flex: none; }
 button { font: inherit; color: inherit; }
 
 .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 16px 72px; }
-.narrow { max-width: 860px; }
+.frame.narrow { max-width: 860px; margin: 0 auto; }
+
+/* Impact-Balken für Termine: orange = gebucht, breit = braucht Status, grau = erledigt, Umriss = abgesagt/verpasst */
+.mk { display: block; width: 4px; height: 16px; border-radius: 2px; background: var(--accent); justify-self: center; }
+.mk.attn { width: 8px; }
+.mk.done { background: var(--taken); }
+.mk.void { background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); }
+.kind { color: var(--ink-2); font-size: 14px; white-space: nowrap; }
+.nf { font-stretch: 90%; }
 
 /* Kopf */
 .topbar { display: flex; align-items: center; gap: 12px 20px; flex-wrap: wrap; padding: 4px 0 18px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
@@ -72,7 +80,9 @@ h1 { margin: 0 0 6px; font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2rem); line-heigh
 .tag.warn { color: var(--error); background: rgba(180, 35, 24, .1); }
 
 /* Heute & demnächst */
-.soon { display: grid; grid-template-columns: 112px 58px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 16px; text-decoration: none; color: inherit; }
+.soon { display: grid; grid-template-columns: 10px 104px 56px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 16px; text-decoration: none; color: inherit; }
+.band a { margin-left: auto; font-size: 13px; font-weight: 600; font-stretch: 100%; text-decoration: none; }
+.band a + .cnt { margin-left: 12px; }
 .soon:hover { background: var(--accent-wash); }
 .soon .d { font-weight: 600; color: var(--ink-2); }
 .soon .t { font-weight: 650; }
@@ -84,16 +94,24 @@ h1 { margin: 0 0 6px; font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2rem); line-heigh
 .search input { width: 100%; padding: 10px 12px 10px 36px; font: inherit; font-size: 15px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--ink); caret-color: var(--accent); }
 .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-3); }
 .search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { appearance: none; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-2); padding: 6px 11px; border-radius: 999px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
-.chip b { font-weight: 600; color: var(--ink-3); margin-left: 4px; }
-.chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
-.chip[aria-pressed="true"] b { color: var(--accent-ink); }
+.chips { display: flex; gap: 2px; padding: 3px; background: var(--band); border-radius: 10px; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+.chip { appearance: none; border: 0; background: transparent; color: var(--ink-2); padding: 7px 11px; border-radius: 7px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.chip b { font-weight: 500; color: var(--ink-3); margin-left: 5px; font-variant-numeric: tabular-nums; }
+.chip:hover { color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(16, 24, 40, .1); }
 
 /* Fortschritts-Strecke */
 .track-head, .prow { display: grid; grid-template-columns: minmax(180px, 1.2fr) 280px minmax(160px, 1fr) 20px; gap: 16px; align-items: center; padding: 0 16px; }
 .track-head { padding-top: 9px; padding-bottom: 9px; border-bottom: 1px solid var(--line); font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
-.track-head .labels { display: grid; grid-template-columns: repeat(5, 1fr); text-align: center; letter-spacing: 0; text-transform: none; font-size: 12px; }
+.track-head .labels { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: auto auto; text-align: center; letter-spacing: .02em; row-gap: 2px; white-space: nowrap; }
+.track-head .labels .sup { grid-column: 1 / span 2; grid-row: 1; border-bottom: 1px solid var(--line-strong); padding-bottom: 2px; margin: 0 8px; }
+.track-head .labels .low { grid-row: 2; text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 500; }
+.track-head .labels .l1 { grid-column: 1; }
+.track-head .labels .l2 { grid-column: 2; }
+.track-head .labels .tall { grid-row: 1 / span 2; align-self: center; }
+.track-head .labels .c3 { grid-column: 3; }
+.track-head .labels .c4 { grid-column: 4; }
+.track-head .labels .c5 { grid-column: 5; }
 .prow { min-height: 62px; padding-top: 10px; padding-bottom: 10px; text-decoration: none; color: inherit; }
 .prow:hover { background: var(--accent-wash); }
 .pname { min-width: 0; }
@@ -137,7 +155,19 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
 .linkrow span { font-size: 13px; font-weight: 600; color: var(--ink-3); }
 .linkrow input { flex: 1 1 260px; min-width: 0; font: inherit; font-size: 13.5px; color: var(--ink-2); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
 
-.brow { display: grid; grid-template-columns: 96px 1fr auto; gap: 12px; align-items: center; padding: 11px 16px; }
+.brow { display: grid; grid-template-columns: 10px 92px 1fr auto; gap: 12px; align-items: center; padding: 11px 16px; }
+.brow .who { min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+
+/* Aufklappbare Abschnitte (Leitfäden) */
+.coll-head { appearance: none; width: 100%; border: 0; cursor: pointer; text-align: left; }
+.coll-head svg { margin-left: 10px; color: var(--ink-3); transition: transform .32s var(--ease); align-self: center; }
+.coll-head[aria-expanded="true"] svg { transform: rotate(180deg); }
+.coll-head[aria-expanded="false"] { border-radius: 11px; }
+.coll-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .32s var(--ease); }
+.coll-body.open { grid-template-rows: 1fr; }
+.coll-body > div { overflow: hidden; min-height: 0; }
+.check input:disabled { opacity: .45; cursor: not-allowed; }
+.check:has(input:disabled) { cursor: not-allowed; color: var(--ink-3); }
 .brow .d b { display: block; font-weight: 650; }
 .brow .d small { color: var(--ink-3); font-size: 12.5px; }
 .bact { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
@@ -161,7 +191,8 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
 .check input:checked::after { content: ""; width: 10px; height: 6px; border-left: 2.5px solid var(--on-accent); border-bottom: 2.5px solid var(--on-accent); transform: translateY(-1px) rotate(-45deg); }
 .check input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .check small { margin-left: auto; color: var(--ink-3); font-size: 13px; }
-.done-note { display: flex; align-items: center; gap: 8px; color: var(--ok); font-weight: 600; margin-top: 8px; }
+.done-note { display: flex; align-items: center; gap: 8px; color: var(--accent-ink); font-weight: 600; margin-top: 8px; }
+.done-note svg { color: var(--accent); }
 
 /* Buttons */
 .btn { appearance: none; border: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 16px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 14.5px; text-decoration: none; transition: filter .15s, transform .12s var(--ease); }
@@ -202,13 +233,17 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
   .prow .track { grid-column: 1; grid-row: 2; max-width: 300px; }
   .prow .next { grid-column: 1; grid-row: 3; }
   .prow > svg { grid-column: 2; grid-row: 1 / span 3; }
-  .soon { grid-template-columns: 76px 48px minmax(0, 1fr); }
-  .soon .tag { display: none; }
+  .soon { grid-template-columns: 10px 76px 46px minmax(0, 1fr); }
+  .soon .kind { display: none; }
   .grid2 { grid-template-columns: 1fr; }
-  .brow { grid-template-columns: 80px 1fr; }
-  .brow .bact { grid-column: 1 / -1; justify-content: flex-start; }
-  .top-r { margin-left: 0; width: 100%; justify-content: space-between; }
-  .nav { overflow-x: auto; scrollbar-width: none; }
+  .brow { grid-template-columns: 10px 76px minmax(0, 1fr); }
+  .brow .bact { grid-column: 2 / -1; justify-content: flex-start; }
+  .topbar { display: grid; grid-template-columns: 1fr auto; gap: 12px; }
+  .top-r { margin-left: 0; gap: 12px; }
+  .saved:empty { display: none; }
+  .nav { grid-column: 1 / -1; grid-row: 2; overflow-x: auto; scrollbar-width: none; }
+  .nav a { flex: 1; text-align: center; }
+  .tools .btn-o { margin-left: 0 !important; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation: none !important; } }
 </style>
@@ -268,7 +303,16 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
     check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
     copy: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
+    plus: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+    down: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
   };
+
+  // Status eines Termins als Impact-Balken
+  function mark(b) {
+    var cls = b.status === 'erledigt' ? ' done' : (b.status === 'storniert' || b.status === 'nicht erschienen') ? ' void' : b.past ? ' attn' : '';
+    var label = b.status === 'gebucht' && b.past ? 'Status fehlt' : b.status;
+    return '<span class="mk' + cls + '" role="img" aria-label="' + esc(label) + '" title="' + esc(label) + '"></span>';
+  }
 
   /* ---------------------------------------------------------------- Helfer */
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -327,8 +371,8 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
   /* ---------------------------------------------------------------- Login */
   function renderLogin(msg) {
     document.title = 'Anmelden · Call-Buchung';
-    app.innerHTML = '<div class="login view"><div class="cal"><div class="brand"><i></i>Call-Buchung</div>' +
-      '<h1 style="margin-top:14px">Admin-Bereich</h1><p class="meta"><span>Termine und Teampartner verwalten</span></p>' +
+    app.innerHTML = '<div class="login view"><div class="cal">' +
+      '<h1>Call-Buchung · Admin</h1><p class="meta"><span>Termine und Teampartner verwalten</span></p>' +
       '<form id="login"><label>Passwort<input type="password" name="pw" autocomplete="current-password" required></label>' +
       '<button class="btn" type="submit">Anmelden</button><p class="err" role="alert"' + (msg ? '' : ' hidden') + '>' + esc(msg) + '</p></form>' +
       '<p class="small">Das Passwort legst du im Google Sheet fest: Call-Buchung → Admin-Passwort festlegen.</p></div></div>';
@@ -360,11 +404,11 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
   /* ---------------------------------------------------------------- Rahmen */
   function shell(active, inner, wide) {
     var nav = [['#/', 'Übersicht', 'home'], ['#/termine', 'Termine', 'termine'], ['#/sperrzeiten', 'Sperrzeiten', 'sperr']];
-    return '<header class="topbar"><div class="brand"><i></i>Call-Buchung</div><nav class="nav" aria-label="Bereiche">' +
+    return '<div class="frame' + (wide ? '' : ' narrow') + '"><header class="topbar"><div class="brand"><i></i>Call-Buchung</div><nav class="nav" aria-label="Bereiche">' +
       nav.map(function (n) { return '<a href="' + n[0] + '"' + (active === n[2] ? ' aria-current="page"' : '') + '>' + n[1] + '</a>'; }).join('') +
       '</nav><div class="top-r"><span class="saved" id="saved" aria-live="polite"></span><button type="button" class="btn-q" data-reload>Neu laden</button>' +
       '<button type="button" class="btn-q" data-logout>Abmelden</button></div></header>' +
-      '<main class="view' + (wide ? '' : ' narrow') + '">' + inner + '</main>';
+      '<main class="view">' + inner + '</main></div>';
   }
 
   function skeleton(active, title) {
@@ -454,13 +498,17 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     if (!st.ov) skeleton('home', 'Übersicht');
     loadOverview().then(function (ov) {
       var today = ov.today;
-      var soon = ov.bookings.filter(function (b) { return b.status === 'gebucht' && !b.past && b.date <= addDays(today, 7); });
-      var html = '<h1>Übersicht</h1><p class="meta"><span>' + ov.partners.length + ' Teampartner</span><span>' + soon.length + ' Calls in den nächsten 7 Tagen</span></p>';
-      html += '<div class="cal" style="margin-top:20px"><h2 class="band"><span>Heute & demnächst</span><span class="cnt">nächste 7 Tage</span></h2><ul class="rows">' +
+      // Heute komplett (auch offene Status), danach die nächsten 5 Calls
+      var todays = ov.bookings.filter(function (b) { return b.date === today && b.status !== 'storniert'; });
+      var later = ov.bookings.filter(function (b) { return b.date > today && b.status === 'gebucht'; });
+      var soon = todays.concat(later.slice(0, 5));
+      var upcoming = ov.bookings.filter(function (b) { return b.status === 'gebucht' && !b.past; }).length;
+      var html = '<h1>Übersicht</h1><p class="meta"><span>' + ov.partners.length + ' Teampartner</span><span>' + upcoming + ' anstehende Calls</span></p>';
+      html += '<div class="cal" style="margin-top:20px"><h2 class="band"><span>Heute & demnächst</span><a href="#/termine">Alle Termine →</a></h2><ul class="rows">' +
         (soon.length ? soon.map(function (b) {
-          return '<li><a class="soon" href="#/p/' + esc(b.token) + '"><span class="d">' + esc(dayLabel(b.date, today)) + '</span><span class="t">' + esc(b.time) +
-            '</span><span class="n">' + esc(b.name) + '</span><span class="tag' + (b.kind === 'checkup' ? '' : ' q') + '">' + KIND[b.kind] + '</span></a></li>';
-        }).join('') : '<li class="empty">Keine Calls in den nächsten 7 Tagen.</li>') + '</ul></div>';
+          return '<li><a class="soon" href="#/p/' + esc(b.token) + '">' + mark(b) + '<span class="d nf">' + esc(dayLabel(b.date, today)) + '</span><span class="t">' + esc(b.time) +
+            '</span><span class="n">' + esc(b.name) + '</span><span class="kind">' + KIND[b.kind] + '</span></a></li>';
+        }).join('') : '<li class="empty">Heute und demnächst keine Calls.</li>') + '</ul></div>';
 
       var counts = {};
       ov.partners.forEach(function (p) { var g = group(p); counts[g] = (counts[g] || 0) + 1; });
@@ -468,9 +516,11 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
       html += '<div class="tools"><label class="search">' + ICON.search + '<input type="search" id="q" placeholder="Name, E-Mail, Telegram" aria-label="Suchen" value="' + esc(st.q) + '"></label>' +
         '<div class="chips" role="group" aria-label="Filter">' + FILTERS.map(function (f) {
           return '<button type="button" class="chip" data-filter="' + f[0] + '" aria-pressed="' + (st.filter === f[0]) + '">' + f[1] + '<b>' + (counts[f[0]] || 0) + '</b></button>';
-        }).join('') + '</div><button type="button" class="btn-o" data-create style="margin-left:auto">+ Person anlegen</button></div>';
+        }).join('') + '</div><button type="button" class="btn-o" data-create style="margin-left:auto">' + ICON.plus + 'Person anlegen</button></div>';
       html += '<div id="create"></div>';
-      html += '<div class="cal"><div class="track-head"><span>Teampartner</span><span class="labels">' + STEPS_SHORT.map(function (s, i) { return '<span title="' + STEPS[i] + '">' + s + '</span>'; }).join('') +
+      html += '<div class="cal"><div class="track-head"><span>Teampartner</span><span class="labels">' +
+        '<span class="sup">Plugin-Call</span><span class="tall c3">Liste</span><span class="tall c4">Check-up</span><span class="tall c5">Läuft</span>' +
+        '<span class="low l1">gebucht</span><span class="low l2">erledigt</span>' +
         '</span><span>Nächster Schritt</span><span></span></div><ul class="rows" id="plist"></ul></div>';
       app.innerHTML = shell('home', html, true);
       paintList();
@@ -527,6 +577,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
   /* ------------------------------------------------------------------ Akte */
   function renderPerson(token) {
     document.title = 'Akte · Call-Buchung';
+    st.openSec = null;
     skeleton('home', 'Akte');
     admin('apiAdminPerson', token).then(function (res) {
       if (!res || !res.ok) { app.innerHTML = shell('home', '<a class="back" href="#/">' + ICON.back + 'Übersicht</a><h1>Nicht gefunden</h1><p class="meta"><span>' + esc((res && res.msg) || '') + '</span></p>'); return; }
@@ -558,21 +609,18 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     html += '<section class="sec cal"><h2 class="band"><span>Calls</span></h2><ul class="rows">' +
       (r.bookings.length ? r.bookings.slice().reverse().map(bookingRow).join('') : '<li class="empty">Noch kein Call gebucht. Schick den Link oben, dann bucht die Person selbst.</li>') + '</ul></section>';
 
-    // Plugin-Leitfaden
-    html += '<section class="sec cal"><h2 class="band"><span>Plugin-Call · Leitfaden</span><span class="cnt">30–45 Min</span></h2><ol class="guide">' +
-      PLUGIN_GUIDE.map(function (g, i) { return guideRow(g, i, plugin, checkup); }).join('') + '</ol></section>';
-
-    // Checkliste
-    html += '<section class="sec cal"><h2 class="band"><span>48h-Checkliste</span><span class="cnt">' + (r.pluginDone ? summary.checks + ' von 6 · hakt die Person selbst ab' : 'noch gesperrt bis zum Plugin-Call') + '</span></h2>' +
+    // Leitfäden: der aktuelle Call steht oben und ist offen, der andere wartet zugeklappt
+    var pluginSec = collSection('plugin', 'Plugin-Call · Leitfaden', '30–45 Min',
+      '<ol class="guide">' + PLUGIN_GUIDE.map(function (g, i) { return guideRow(g, i, plugin, checkup); }).join('') + '</ol>', !r.pluginDone);
+    var checkupSec = collSection('checkup', 'Check-up-Call · Leitfaden', 'bis 60 Min',
+      '<ol class="guide">' + CHECKUP_GUIDE.map(function (g, i) { return guideRow(g, i, plugin, checkup); }).join('') + '</ol>', r.pluginDone);
+    var checklist = '<section class="sec cal"><h2 class="band"><span>48h-Checkliste</span><span class="cnt">' + (r.pluginDone ? summary.checks + ' von 6 · hakt die Person selbst ab' : 'gesperrt bis zum Plugin-Call') + '</span></h2>' +
       CHECK.map(function (c) {
-        return '<label class="check"><input type="checkbox" data-field="' + esc(c) + '"' + (f[c] === true ? ' checked' : '') + '>' + esc(CHECK_T[c]) + '</label>';
+        return '<label class="check"><input type="checkbox" data-field="' + esc(c) + '"' + (f[c] === true ? ' checked' : '') + (r.pluginDone ? '' : ' disabled') + '>' + esc(CHECK_T[c]) + '</label>';
       }).join('') + '<div class="check" style="cursor:default"><span>Check-up-Call</span><small>' +
       (checkup ? esc(shortDate(checkup.date) + ' ' + checkup.time + ' · ' + checkup.status) : r.checkupFrom ? 'buchbar ab ' + esc(shortDate(r.checkupFrom.date) + ' ' + r.checkupFrom.time) : r.pluginDone ? 'noch nicht gebucht' : '–') +
       '</small></div></section>';
-
-    // Check-up-Leitfaden
-    html += '<section class="sec cal"><h2 class="band"><span>Check-up-Call · Leitfaden</span><span class="cnt">bis 60 Min</span></h2><ol class="guide">' +
-      CHECKUP_GUIDE.map(function (g, i) { return guideRow(g, i, plugin, checkup); }).join('') + '</ol></section>';
+    html += r.pluginDone ? checklist + checkupSec + pluginSec : pluginSec + checklist + checkupSec;
 
     // Stammdaten
     html += '<section class="sec cal"><h2 class="band"><span>Stammdaten</span></h2><div class="grid2">' +
@@ -582,6 +630,13 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
 
     app.innerHTML = shell('home', html);
     setSaved(st.saving ? 'busy' : '');
+  }
+
+  function collSection(id, title, cnt, body, open) {
+    if (st.openSec && st.openSec[id] !== undefined) open = st.openSec[id];
+    return '<section class="sec cal"><h2 style="margin:0"><button type="button" class="band coll-head" data-coll="' + id + '" aria-expanded="' + open + '" aria-controls="c-' + id + '">' +
+      '<span>' + esc(title) + '</span><span class="cnt">' + esc(cnt) + '</span>' + ICON.down + '</button></h2>' +
+      '<div class="coll-body' + (open ? ' open' : '') + '" id="c-' + id + '"><div>' + body + '</div></div></section>';
   }
 
   function latest(list, kind) {
@@ -620,8 +675,8 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
 
   function bookingRow(b) {
     var d = st.ov ? dayLabel(b.date, st.ov.today) : shortDate(b.date);
-    return '<li class="brow"><span class="d"><b>' + esc(d) + '</b><small>' + esc(b.time + '–' + b.end) + '</small></span>' +
-      '<span><span class="tag' + (b.kind === 'checkup' ? '' : ' q') + '">' + KIND[b.kind] + '</span></span>' +
+    return '<li class="brow">' + mark(b) + '<span class="d"><b class="nf">' + esc(d) + '</b><small>' + esc(b.time + '–' + b.end) + '</small></span>' +
+      '<span class="who"><span class="kind">' + KIND[b.kind] + '</span>' + (b.status === 'gebucht' && b.past ? '<span class="tag warn">Status setzen</span>' : '') + '</span>' +
       '<span class="bact">' + (b.status === 'gebucht' ? '<button type="button" class="btn-o" data-status="erledigt" data-id="' + esc(b.id) + '">' + ICON.check + 'Erledigt</button>' : '') +
       '<select data-booking="' + esc(b.id) + '" aria-label="Status">' + STATUS.map(function (s) { return '<option' + (s === b.status ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select></span></li>';
   }
@@ -718,9 +773,9 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
       groups.forEach(function (g) {
         html += '<section class="sec cal" style="margin-top:20px"><h2 class="band"><span>' + g[0] + '</span><span class="cnt">' + g[1].length + '</span></h2><ul class="rows">' +
           (g[1].length ? g[1].map(function (b) {
-            return '<li class="brow"><span class="d"><b>' + esc(dayLabel(b.date, today)) + '</b><small>' + esc(b.time + '–' + b.end) + '</small></span>' +
-              '<span><a href="#/p/' + esc(b.token) + '" style="font-weight:600">' + esc(b.name) + '</a> <span class="tag' + (b.kind === 'checkup' ? '' : ' q') + '">' + KIND[b.kind] + '</span>' +
-              (b.status === 'gebucht' && b.past ? ' <span class="tag warn">Status setzen</span>' : '') + '</span>' +
+            return '<li class="brow">' + mark(b) + '<span class="d"><b class="nf">' + esc(dayLabel(b.date, today)) + '</b><small>' + esc(b.time + '–' + b.end) + '</small></span>' +
+              '<span class="who"><a href="#/p/' + esc(b.token) + '" style="font-weight:600">' + esc(b.name) + '</a><span class="kind">' + KIND[b.kind] + '</span>' +
+              (b.status === 'gebucht' && b.past ? '<span class="tag warn">Status setzen</span>' : '') + '</span>' +
               '<span class="bact">' + (b.status === 'gebucht' ? '<button type="button" class="btn-o" data-status="erledigt" data-id="' + esc(b.id) + '">' + ICON.check + 'Erledigt</button>' : '') +
               '<select data-booking="' + esc(b.id) + '" aria-label="Status">' + STATUS.map(function (s) { return '<option' + (s === b.status ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select></span></li>';
           }).join('') : '<li class="empty">Keine.</li>') + '</ul></section>';
@@ -817,6 +872,14 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
       st.filter = t.getAttribute('data-filter');
       app.querySelectorAll('[data-filter]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === t)); });
       paintList();
+    }
+    else if (t.hasAttribute('data-coll')) {
+      var id = t.getAttribute('data-coll');
+      var open = t.getAttribute('aria-expanded') !== 'true';
+      t.setAttribute('aria-expanded', String(open));
+      document.getElementById('c-' + id).classList.toggle('open', open);
+      st.openSec = st.openSec || {};
+      st.openSec[id] = open;
     }
     else if (t.hasAttribute('data-create')) openCreate();
     else if (t.hasAttribute('data-create-cancel')) document.getElementById('create').innerHTML = '';
