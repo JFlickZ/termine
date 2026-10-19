@@ -316,6 +316,10 @@ button.chk.is-done .st { color: var(--accent-ink); font-weight: 600; }
 .ask p { margin: 0; font-weight: 600; }
 .danger { background: #b42318; color: #fff; min-height: 40px; padding: 0 14px; font-size: 14px; }
 .empty { padding: 18px 16px; color: var(--ink-2); display: grid; gap: 12px; justify-items: start; }
+.locked { display: flex; gap: 12px; align-items: flex-start; padding: 18px 16px; color: var(--ink-2); font-size: 14.5px; }
+.locked svg { color: var(--accent); margin-top: 1px; }
+.locked p { margin: 0; max-width: 52ch; }
+.note .btn { margin-top: 12px; }
 .empty p { margin: 0; }
 
 .foot { margin: 18px 2px 0; font-size: 13px; color: var(--ink-3); }
@@ -404,6 +408,7 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
     done: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>',
     copy: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
     arrow: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+    lock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
     tap: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2.5v3M16 2.5v3"/><rect x="7" y="12.5" width="4" height="4" rx="1" fill="currentColor" stroke="none"/></svg>',
     arrowSm: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
     back: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
@@ -497,6 +502,7 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
     var d = st.data;
     if (!d) { app.innerHTML = skeleton(); load(); return; }
     document.title = d.label + ' mit ' + d.host;
+    if (d.gate) { app.innerHTML = gateHtml(d); return; }
     var weeks = weeksOf(d.days);
     if (st.week === null || !weeks[st.week]) {
       st.week = 0;
@@ -507,7 +513,11 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
     var html = '';
     if (st.token) html += '<a class="back" href="' + esc(link('?p=' + st.token)) + '">' + ICON.back + 'Deine Seite</a>';
     html += '<header class="top"><h1>' + esc(d.label) + ' mit ' + esc(d.host) + '</h1><p class="meta">' + metaLine(d) + '</p>';
-    if (d.person && !st.done) html += '<p class="hello">Hey ' + esc(d.person.name) + ', such dir einen Termin aus.</p>';
+    if (d.person && !st.done) {
+      html += '<p class="hello">Hey ' + esc(d.person.name) + ', such dir einen Termin aus' + (d.from
+        ? ': frühestens ab <b>' + esc(fmt(d.from.date, { weekday: 'short', day: 'numeric', month: 'short' })) + ' um ' + esc(d.from.time) + ' Uhr</b>, 48 Stunden nach deinem Plugin-Call.'
+        : '.') + '</p>';
+    }
     html += '</header>';
     if (d.existing && !st.done) {
       html += '<div class="note">' + ICON.info + '<p>Du hast schon einen ' + esc(d.label) + ' am <b>' + esc(longDate(d.existing.date)) +
@@ -524,6 +534,27 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
     html += '<div role="tabpanel">' + tilesHtml(w) + '<div class="daylist" id="daylist">' + dayListHtml() + '</div></div>';
     html += '<p class="foot">Belegte Termine sind schon vergeben. Wer gebucht hat, sieht nur ' + esc(d.host) + '.</p>';
     app.innerHTML = html;
+  }
+
+  // Check-up-Call ohne persönlichen Link oder vor dem Plugin-Call
+  function gateHtml(d) {
+    var html = st.token ? '<a class="back" href="' + esc(link('?p=' + st.token)) + '">' + ICON.back + 'Deine Seite</a>' : '';
+    html += '<header class="top"><h1>' + esc(d.label) + ' mit ' + esc(d.host) + '</h1><p class="meta"><span>' + d.dur + ' Minuten</span><span>nach deinem Plugin-Call</span></p></header>';
+    if (d.gate === 'plugin') {
+      html += '<div class="note">' + ICON.lock + '<div><p>Den Check-up-Call kannst du nach deinem Plugin-Call buchen. ' + esc(d.host) +
+        ' schaltet ihn dir direkt nach dem Call frei, frühestens 48 Stunden später ist dein Check-up.</p>' +
+        '<a class="btn" href="' + esc(link('?p=' + st.token)) + '">Zu deiner Seite ' + ICON.arrow + '</a></div></div>';
+    } else {
+      html += '<div class="note">' + ICON.lock + '<div><p>Den Check-up-Call buchst du über deinen persönlichen Link. Den bekommst du, wenn du deinen Plugin-Call buchst.</p>' +
+        '<a class="btn" href="' + esc(link('?k=plugin')) + '">Plugin-Call buchen ' + ICON.arrow + '</a></div></div>';
+    }
+    return html;
+  }
+
+  // Geschlossene Tage: vor dem frühesten Check-up-Termin „zu früh“, sonst „vorbei“
+  function closedLabel(date) {
+    var from = st.data && st.data.from;
+    return from && date <= from.date && date >= st.data.days[0].date ? 'zu früh' : 'vorbei';
   }
 
   function dayOf(date) {
@@ -545,7 +576,7 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
     if (!day) state = date < today ? 'vorbei' : 'noch nicht buchbar';
     else if (day.off) state = 'kein Termin';
     else if (free) state = free + ' frei';
-    else state = day.slots.every(function (s) { return s.s === 'closed'; }) ? 'vorbei' : 'ausgebucht';
+    else state = day.slots.every(function (s) { return s.s === 'closed'; }) ? closedLabel(date) : 'ausgebucht';
     var disabled = !free && st.day !== date;
     var pips = day && !day.off ? day.slots.map(function (s) { return '<i class="' + s.s + '"></i>'; }).join('') : '';
     var isToday = date === today;
@@ -555,7 +586,7 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
       '<span class="t-mo">' + (isToday ? 'Heute' : esc(fmt(date, { month: 'short' }))) + '</span></span>' +
       '<span class="t-num">' + esc(fmt(date, { day: 'numeric' }).replace('.', '')) + '</span>' +
       '<span class="t-bot"><span class="pips" aria-hidden="true">' + pips + '</span>' +
-      '<span class="t-cnt' + (free ? '' : ' none') + '">' + esc(free ? free + ' frei' : ({ ausgebucht: 'voll', vorbei: 'vorbei' }[state] || '–')) + '</span></span></button>';
+      '<span class="t-cnt' + (free ? '' : ' none') + '">' + esc(free ? free + ' frei' : ({ ausgebucht: 'voll', vorbei: 'vorbei', 'zu früh': 'zu früh' }[state] || '–')) + '</span></span></button>';
   }
 
   function dayListHtml() {
@@ -588,7 +619,7 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
     var cnt;
     if (day.off) cnt = 'kein Termin';
     else if (free) cnt = free + ' frei';
-    else cnt = day.slots.every(function (s) { return s.s === 'closed'; }) ? 'vorbei' : 'ausgebucht';
+    else cnt = day.slots.every(function (s) { return s.s === 'closed'; }) ? closedLabel(day.date) : 'ausgebucht';
     var id = 'd-' + day.date;
     return '<section class="day" aria-labelledby="' + id + '"><h2 class="band" id="' + id + '">' +
       '<span>' + esc(fmt(day.date, { weekday: 'long' })) + '</span><span class="dd">' + esc(fmt(day.date, { day: 'numeric', month: 'long' })) + '</span>' +
@@ -658,12 +689,14 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
     if (r.invite) html += '<p class="small">Eine Kalender-Einladung ist an deine E-Mail unterwegs.</p>';
     if (r.link) {
       html += '<div class="plink"><p class="plink-h">Dein persönlicher Link</p>' +
-        '<p class="small">Hier findest du deine 48h-Checkliste und deine Termine. Speicher ihn dir.</p>' +
+        '<p class="small">' + (r.kind === 'plugin'
+          ? 'Hier siehst du deinen Termin. Nach dem Call findest du hier auch deine 48h-Checkliste. Speicher dir den Link.'
+          : 'Hier findest du deine Checkliste und deine Termine.') + '</p>' +
         '<div class="copy"><input id="plink" type="text" readonly value="' + esc(r.link) + '" aria-label="Dein persönlicher Link">' +
         '<button type="button" class="btn-o" data-copy="plink">' + ICON.copy + '<span>Kopieren</span></button></div>' +
-        '<div><a class="btn" href="' + esc(r.link) + '">Zu deiner Checkliste ' + ICON.arrow + '</a></div></div>';
+        '<div><a class="btn" href="' + esc(r.link) + '">Zu deiner Seite ' + ICON.arrow + '</a></div></div>';
     } else if (r.linkByMail) {
-      html += '<p class="small">Deinen persönlichen Link mit der 48h-Checkliste findest du in der Einladung.</p>';
+      html += '<p class="small">Deinen persönlichen Link findest du in der Einladung. Nach dem Call findest du dort auch deine 48h-Checkliste.</p>';
     }
     return html + '</div>';
   }
@@ -811,25 +844,29 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
       app.innerHTML = '<header class="top"><h1>Dieser Link funktioniert nicht</h1><p class="meta"><span>Frag Julien nach deinem persönlichen Link.</span></p></header>';
       return;
     }
-    document.title = 'Deine Checkliste';
-    var count = p.items.filter(function (i) { return i.done; }).length + (p.checkupBooked ? 1 : 0);
-    var html = '<header class="top"><h1>Hey ' + esc(p.name) + '</h1><p class="meta"><span>Deine 48h-Checkliste</span><span>deine Calls mit ' + esc(p.host) + '</span></p></header>';
+    document.title = p.locked ? 'Dein Plugin-Call' : 'Deine Checkliste';
+    var html = '<header class="top"><h1>Hey ' + esc(p.name) + '</h1><p class="meta">' +
+      (p.locked ? '<span>Dein Plugin-Call mit ' + esc(p.host) + '</span>' : '<span>Deine 48h-Checkliste</span><span>deine Calls mit ' + esc(p.host) + '</span>') +
+      '</p></header>';
     if (!p.pluginBooked) {
       html += '<div class="note">' + ICON.info + '<div><p>Als Erstes: Buch deinen Plugin-Call mit ' + esc(p.host) + '.</p>' +
         '<a class="btn" href="' + esc(link('?k=plugin&p=' + st.token)) + '">Plugin-Call buchen ' + ICON.arrow + '</a></div></div>';
     }
-    html += '<div class="cal" style="margin-top:24px"><h2 class="band" style="top:0"><span>Deine 48h-Checkliste</span>' +
-      '<span class="progress" aria-hidden="true">' + progressMarks(count) + '</span>' +
-      '<span class="cnt" id="cnt">' + count + ' von 7 erledigt</span></h2><ul class="rows">' +
-      p.items.map(function (it, i) { return checkRow(it, i); }).join('') + checkupRow(p) + '</ul></div>';
-
-    html += '<div class="cal"><h2 class="band" style="top:0"><span>Deine Calls</span></h2><ul class="rows">';
-    if (!p.bookings.length) {
-      html += '<li class="item"><div class="empty"><p>Noch kein Call gebucht.</p></div></li>';
+    var calls = '<div class="cal"' + (p.locked ? ' style="margin-top:24px"' : '') + '><h2 class="band"><span>Deine Calls</span></h2><ul class="rows">' +
+      (p.bookings.length ? p.bookings.map(bookingRow).join('') : '<li class="item"><div class="empty"><p>Noch kein Call gebucht.</p></div></li>') +
+      '</ul></div>';
+    if (p.locked) {
+      // Vor dem Plugin-Call: erst der Termin, dann der Hinweis auf die Checkliste
+      html += calls + '<div class="cal"><h2 class="band"><span>Deine 48h-Checkliste</span><span class="cnt">nach dem Plugin-Call</span></h2>' +
+        '<div class="locked">' + ICON.lock + '<p>Die bekommst du nach deinem Plugin-Call, genau hier auf dieser Seite. ' +
+        'Danach buchst du hier auch deinen Check-up-Call.</p></div></div>';
     } else {
-      html += p.bookings.map(bookingRow).join('');
+      var count = p.items.filter(function (i) { return i.done; }).length + (p.checkupBooked ? 1 : 0);
+      html += '<div class="cal" style="margin-top:24px"><h2 class="band"><span>Deine 48h-Checkliste</span>' +
+        '<span class="progress" aria-hidden="true">' + progressMarks(count) + '</span>' +
+        '<span class="cnt" id="cnt">' + count + ' von 7 erledigt</span></h2><ul class="rows">' +
+        p.items.map(function (it, i) { return checkRow(it, i); }).join('') + checkupRow(p) + '</ul></div>' + calls;
     }
-    html += '</ul></div>';
     html += '<p class="foot">Diesen Link siehst nur du. Teile ihn nicht.</p>';
     app.innerHTML = html;
   }
@@ -853,7 +890,9 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
         '<span class="ttl">Check-up-Call gebucht<span class="sub2">Steht unten bei deinen Calls</span></span><span class="st">erledigt</span></div></li>';
     }
     return '<li class="item"><a class="row chk" href="' + esc(link('?k=checkup&p=' + st.token)) + '"><span class="time num">7</span><span class="box box-go">' + ICON.arrowSm + '</span>' +
-      '<span class="ttl">Check-up-Call buchen<span class="sub2">Sobald 1 bis 6 erledigt sind</span></span><span class="st">buchen ' + ICON.arrow + '</span></a></li>';
+      '<span class="ttl">Check-up-Call buchen<span class="sub2">' + (p.checkupFrom
+        ? 'Frühestens ab ' + esc(fmt(p.checkupFrom.date, { weekday: 'short', day: 'numeric', month: 'short' })) + ' um ' + esc(p.checkupFrom.time) + ' Uhr'
+        : 'Termin für deinen Check-up-Call aussuchen') + '</span></span><span class="st">buchen ' + ICON.arrow + '</span></a></li>';
   }
 
   function bookingRow(b) {
@@ -882,11 +921,11 @@ window.API_URL = "https://script.google.com/macros/s/AKfycbxHNhlTDShbS62CRTkyVi3
     it.done = !it.done;
     paintCheck(btn, it);
     call('apiCheck', st.token, key, it.done).then(function (res) {
-      if (!res || !res.ok) throw new Error();
-    }).catch(function () {
+      if (!res || !res.ok) throw new Error((res && res.msg) || '');
+    }).catch(function (err) {
       it.done = !it.done;
       paintCheck(btn, it);
-      toast('Konnte nicht gespeichert werden. Bitte versuch es nochmal.');
+      toast((err && err.message) || 'Konnte nicht gespeichert werden. Bitte versuch es nochmal.');
     });
   }
 
