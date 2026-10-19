@@ -798,7 +798,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
         '<p class="hint" style="margin:0;padding:0 16px 14px;color:var(--ink-3);font-size:13px">Ohne Uhrzeit wird der ganze Tag gesperrt. Termine in deinem Google Kalender sperren automatisch.</p></section>';
       html += '<section class="sec cal"><h2 class="band"><span>Gesperrt</span><span class="cnt">' + st.blocks.length + '</span></h2><ul class="rows">' +
         (st.blocks.length ? st.blocks.map(function (b) {
-          return '<li class="brow"><span class="d"><b>' + esc(shortDate(b.date)) + '</b><small>' + esc(b.from ? b.from + (b.to ? '–' + b.to : '') : 'ganzer Tag') + '</small></span>' +
+          return '<li class="brow"><span class="mk done" aria-hidden="true"></span><span class="d"><b class="nf">' + esc(shortDate(b.date)) + '</b><small>' + esc(b.from ? b.from + (b.to ? '–' + b.to : '') : 'ganzer Tag') + '</small></span>' +
             '<span>' + esc(b.note || '') + '</span><span class="bact"><button type="button" class="btn-q danger" data-unblock="' + b.row + '" data-date="' + esc(b.date) + '">Entfernen</button></span></li>';
         }).join('') : '<li class="empty">Keine Sperrzeiten.</li>') + '</ul></section>';
       app.innerHTML = shell('sperr', html);
