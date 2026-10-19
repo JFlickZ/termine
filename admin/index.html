@@ -77,7 +77,7 @@ h1 { margin: 0 0 6px; font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2rem); line-heigh
 .empty { padding: 18px 16px; color: var(--ink-2); }
 .tag { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent-ink); background: var(--accent-soft); padding: 2px 6px 1px; border-radius: 4px; white-space: nowrap; }
 .tag.q { color: var(--ink-2); background: var(--band); }
-.tag.warn { color: var(--error); background: rgba(180, 35, 24, .1); }
+.tag.warn { color: var(--on-accent); background: var(--accent); }
 
 /* Heute & demnächst */
 .soon { display: grid; grid-template-columns: 10px 104px 56px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 16px; text-decoration: none; color: inherit; }
@@ -88,10 +88,80 @@ h1 { margin: 0 0 6px; font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2rem); line-heigh
 .soon .t { font-weight: 650; }
 .soon .n { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* Kalender: dieselben Kacheln wie auf der Buchungsseite, aber mit Namen.
+   Kachel-Pips: orange = Call, Umriss = frei, grau = gesperrt oder privat */
+.calsec { margin-top: 20px; }
+.cbar { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.wtabs { display: flex; gap: 2px; padding: 3px; background: var(--band); border-radius: 10px; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.wtab { appearance: none; border: 0; background: transparent; cursor: pointer; padding: 6px 14px 5px 12px; border-radius: 7px; font-size: 14px; font-weight: 600; color: var(--ink-2); display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2; white-space: nowrap; transition: background-color .15s, color .15s; }
+.wtab small { font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.wtab:hover { color: var(--ink); }
+.wtab[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(16, 24, 40, .1); }
+.wl-s { display: none; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; color: var(--ink-3); font-size: 13px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dpips { display: flex; gap: 3px; align-items: flex-end; }
+.dpips i, .legend i { display: block; width: 4px; height: 12px; border-radius: 1.5px; box-shadow: inset 0 0 0 1px var(--line-strong); }
+.dpips i.booked, .legend i.on { background: var(--accent); box-shadow: none; }
+.dpips i.blocked, .dpips i.busy, .legend i.t { background: var(--taken); box-shadow: none; }
+.dpips i.past { opacity: .45; }
+.tiles { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.tile { appearance: none; cursor: pointer; text-align: left; min-width: 0; min-height: 92px; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; padding: 10px 10px 9px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); transition: border-color .15s, background-color .15s, box-shadow .2s, transform .18s var(--ease); }
+.tile:hover { border-color: var(--accent); }
+.tile:active { transform: scale(.97); }
+.tile[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent), 0 6px 16px -8px rgba(224, 128, 43, .45); background: var(--accent-wash); }
+.tile.off { background: transparent; border-style: dashed; }
+.tile.off .t-wd, .tile.off .t-num, .tile.gone .t-num { color: var(--ink-3); }
+.tile.off .t-num { font-weight: 500; }
+.t-top, .t-bot { display: flex; justify-content: space-between; align-items: baseline; gap: 4px; }
+.t-bot { align-items: center; }
+.t-wd { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.t-mo { font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.is-today .t-wd, .is-today .t-mo { color: var(--accent-ink); font-weight: 700; }
+.t-num { font-size: 30px; font-weight: 700; line-height: 1; font-stretch: 88%; letter-spacing: -0.02em; }
+.t-cnt { font-size: 12px; font-weight: 600; color: var(--accent-ink); white-space: nowrap; }
+.t-cnt.none { color: var(--ink-3); font-weight: 500; }
+.dayc { margin-top: 12px; }
+.dayc .band .dd { font-weight: 500; color: var(--ink-2); font-stretch: 100%; }
+.dayc .band .tag { align-self: center; }
+.reveal { animation: reveal .34s var(--ease) both; }
+@keyframes reveal { from { opacity: .35; transform: translateY(-8px); } }
+.slot { display: grid; grid-template-columns: 52px 10px minmax(0, 1fr) auto; gap: 12px; align-items: center; width: 100%; min-height: 50px; padding: 7px 16px; }
+button.slot { appearance: none; border: 0; background: transparent; text-align: left; cursor: pointer; transition: background-color .15s; }
+button.slot:hover, button.slot[aria-expanded="true"] { background: var(--accent-wash); }
+button.slot:focus-visible { outline-offset: -2px; border-radius: 0; }
+.slot .time { font-weight: 650; }
+.slot .what { min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+.slot .what b { font-weight: 650; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slot .what small { color: var(--ink-3); font-size: 13px; }
+.slot .what .tag { align-self: center; }
+.slot.muted .time, .slot.muted .what { color: var(--ink-3); font-weight: 500; }
+.slot .side { display: inline-flex; align-items: center; color: var(--ink-3); }
+.slot .side svg { transition: transform .32s var(--ease); }
+.slot[aria-expanded="true"] .side svg { transform: rotate(180deg); }
+.slot .btn-q { padding: 4px 2px; }
+.apanel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .32s var(--ease); background: var(--accent-wash); }
+.apanel.open { grid-template-rows: 1fr; }
+.apanel > div { overflow: hidden; min-height: 0; }
+.ap-in { padding: 2px 16px 18px 102px; opacity: 0; transform: translateY(-6px); transition: opacity .2s ease, transform .32s var(--ease); }
+.apanel.open .ap-in { opacity: 1; transform: none; transition-delay: .05s; }
+.ap-top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 2px 0 14px; }
+.ap-top .meta { flex: 1 1 240px; }
+.ap-act { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.ap-act select { padding-top: 7px; padding-bottom: 7px; }
+.ap-grid { display: grid; grid-template-columns: minmax(250px, 300px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.ap-card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.ap-card > .band { border-radius: 9px 9px 0 0; }
+.ap-card > .band > span:first-child { white-space: nowrap; }
+@media (max-width: 960px) { .ap-in { padding-left: 16px; } }
+.ap-load { display: flex; align-items: center; gap: 10px; padding: 8px 0 4px; color: var(--ink-2); font-size: 14px; }
+.ap-wait { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.ap-wait .sk:first-child { border-top: 0; }
+
 /* Werkzeugleiste */
 .tools { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin: 28px 0 12px; }
 .search { flex: 1 1 220px; max-width: 320px; position: relative; }
-.search input { width: 100%; padding: 10px 12px 10px 36px; font: inherit; font-size: 15px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--ink); caret-color: var(--accent); }
+.search input { width: 100%; padding: 10px 12px 10px 36px; font: inherit; font-size: 16px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); color: var(--ink); caret-color: var(--accent); }
 .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-3); }
 .search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .chips { display: flex; gap: 2px; padding: 3px; background: var(--band); border-radius: 10px; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
@@ -119,7 +189,8 @@ h1 { margin: 0 0 6px; font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2rem); line-heigh
 .pname small { display: block; color: var(--ink-3); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .next { font-size: 14px; color: var(--ink-2); min-width: 0; }
 .next.act { color: var(--accent-ink); font-weight: 600; }
-.next.warn { color: var(--error); font-weight: 600; }
+.next.warn { color: var(--accent-ink); font-weight: 650; }
+.next.warn::before { content: ""; display: inline-block; width: 8px; height: 12px; border-radius: 2px; background: var(--accent); margin-right: 8px; vertical-align: -1px; }
 .prow > svg { color: var(--ink-3); }
 
 .track { display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; position: relative; height: 22px; }
@@ -143,7 +214,7 @@ h1 { margin: 0 0 6px; font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2rem); line-heigh
 .head .grow { flex: 1 1 320px; min-width: 0; }
 .pill-select { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-3); font-weight: 600; }
 select, .f input, .f textarea, .field input, .field textarea, .field select {
-  font: inherit; font-size: 15px; color: var(--ink); background: var(--surface);
+  font: inherit; font-size: 16px; color: var(--ink); background: var(--surface);
   border: 1px solid var(--line-strong); border-radius: 8px; padding: 9px 11px; caret-color: var(--accent);
   transition: border-color .15s, box-shadow .15s;
 }
@@ -244,6 +315,25 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
   .nav { grid-column: 1 / -1; grid-row: 2; overflow-x: auto; scrollbar-width: none; }
   .nav a { flex: 1; text-align: center; }
   .tools .btn-o { margin-left: 0 !important; }
+  .bact select, .linkrow input { font-size: 16px; }
+  .wtabs { width: 100%; }
+  .wtab { flex: 1; min-width: 0; padding: 6px 9px 5px; font-size: 13px; }
+  .wl-l, .wr { display: none; }
+  .wl-s { display: inline; }
+  .legend { width: 100%; font-size: 12.5px; }
+  .tiles { gap: 5px; }
+  .tile { min-height: 0; aspect-ratio: 1; padding: 5px 2px 6px; border-radius: 8px; align-items: center; justify-content: space-between; gap: 2px; }
+  .tile[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--accent); }
+  .t-top, .t-bot { justify-content: center; }
+  .t-mo, .t-cnt { display: none; }
+  .t-wd { font-size: 10.5px; letter-spacing: .02em; line-height: 1.1; }
+  .t-num { font-size: 18px; }
+  .dpips { gap: 2px; }
+  .dpips i { width: 3px; height: 7px; border-radius: 1px; }
+  .slot { grid-template-columns: 44px 10px minmax(0, 1fr) auto; gap: 10px; padding: 7px 14px; }
+  .ap-in { padding: 2px 12px 16px; }
+  .ap-grid { grid-template-columns: minmax(0, 1fr); }
+  .ap-grid.locked > .ap-card:first-child { order: 2; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation: none !important; } }
 </style>
@@ -258,7 +348,8 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
 
   var app = document.getElementById('app');
   var KEY = 'cb_admin_session';
-  var st = { session: null, ov: null, ovAt: 0, person: null, blocks: null, filter: 'alle', q: '', dirty: {}, saving: false, saveTimer: null, flashCreate: false };
+  var st = { session: null, ov: null, ovAt: 0, person: null, blocks: null, filter: 'alle', q: '', dirty: {}, saving: false, saveTimer: null, flashCreate: false,
+    view: '', ctx: null, calWeek: 0, calDay: null, calOpen: null };
   try { st.session = localStorage.getItem(KEY); } catch (e) { /* privat */ }
 
   var STEPS = ['Plugin gebucht', 'Plugin erledigt', 'Checkliste', 'Check-up', 'Läuft'];
@@ -497,35 +588,43 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     document.title = 'Übersicht · Call-Buchung';
     if (!st.ov) skeleton('home', 'Übersicht');
     loadOverview().then(function (ov) {
-      var today = ov.today;
-      // Heute komplett (auch offene Status), danach die nächsten 5 Calls
-      var todays = ov.bookings.filter(function (b) { return b.date === today && b.status !== 'storniert'; });
-      var later = ov.bookings.filter(function (b) { return b.date > today && b.status === 'gebucht'; });
-      var soon = todays.concat(later.slice(0, 5));
-      var upcoming = ov.bookings.filter(function (b) { return b.status === 'gebucht' && !b.past; }).length;
-      var html = '<h1>Übersicht</h1><p class="meta"><span>' + ov.partners.length + ' Teampartner</span><span>' + upcoming + ' anstehende Calls</span></p>';
-      html += '<div class="cal" style="margin-top:20px"><h2 class="band"><span>Heute & demnächst</span><a href="#/termine">Alle Termine →</a></h2><ul class="rows">' +
-        (soon.length ? soon.map(function (b) {
-          return '<li><a class="soon" href="#/p/' + esc(b.token) + '">' + mark(b) + '<span class="d nf">' + esc(dayLabel(b.date, today)) + '</span><span class="t">' + esc(b.time) +
-            '</span><span class="n">' + esc(b.name) + '</span><span class="kind">' + KIND[b.kind] + '</span></a></li>';
-        }).join('') : '<li class="empty">Heute und demnächst keine Calls.</li>') + '</ul></div>';
-
-      var counts = {};
-      ov.partners.forEach(function (p) { var g = group(p); counts[g] = (counts[g] || 0) + 1; });
-      counts.alle = ov.partners.length;
-      html += '<div class="tools"><label class="search">' + ICON.search + '<input type="search" id="q" placeholder="Name, E-Mail, Telegram" aria-label="Suchen" value="' + esc(st.q) + '"></label>' +
-        '<div class="chips" role="group" aria-label="Filter">' + FILTERS.map(function (f) {
-          return '<button type="button" class="chip" data-filter="' + f[0] + '" aria-pressed="' + (st.filter === f[0]) + '">' + f[1] + '<b>' + (counts[f[0]] || 0) + '</b></button>';
-        }).join('') + '</div><button type="button" class="btn-o" data-create style="margin-left:auto">' + ICON.plus + 'Person anlegen</button></div>';
-      html += '<div id="create"></div>';
-      html += '<div class="cal"><div class="track-head"><span>Teampartner</span><span class="labels">' +
-        '<span class="sup">Plugin-Call</span><span class="tall c3">Liste</span><span class="tall c4">Check-up</span><span class="tall c5">Läuft</span>' +
-        '<span class="low l1">gebucht</span><span class="low l2">erledigt</span>' +
-        '</span><span>Nächster Schritt</span><span></span></div><ul class="rows" id="plist"></ul></div>';
-      app.innerHTML = shell('home', html, true);
-      paintList();
+      if (st.view !== 'home') return;
+      paintOverview(ov);
       if (st.flashCreate) { st.flashCreate = false; openCreate(); }
     }).catch(function (err) { failView('home', err); });
+  }
+
+  function paintOverview(ov) {
+    var today = ov.today;
+    // Heute komplett (auch offene Status), danach die nächsten 5 Calls
+    var todays = ov.bookings.filter(function (b) { return b.date === today && b.status !== 'storniert'; });
+    var later = ov.bookings.filter(function (b) { return b.date > today && b.status === 'gebucht'; });
+    var soon = todays.concat(later.slice(0, 5));
+    var upcoming = ov.bookings.filter(function (b) { return b.status === 'gebucht' && !b.past; }).length;
+    var html = '<h1>Übersicht</h1><p class="meta"><span>' + ov.partners.length + ' Teampartner</span><span>' + upcoming + ' anstehende Calls</span></p>';
+    html += '<div id="calsec">' + calSection(ov) + '</div>';
+    html += '<div class="cal" style="margin-top:24px"><h2 class="band"><span>Heute & demnächst</span><a href="#/termine">Alle Termine →</a></h2><ul class="rows">' +
+      (soon.length ? soon.map(function (b) {
+        return '<li><a class="soon" href="#/p/' + esc(b.token) + '">' + mark(b) + '<span class="d nf">' + esc(dayLabel(b.date, today)) + '</span><span class="t">' + esc(b.time) +
+          '</span><span class="n">' + esc(b.name) + '</span><span class="kind">' + KIND[b.kind] + '</span></a></li>';
+      }).join('') : '<li class="empty">Heute und demnächst keine Calls.</li>') + '</ul></div>';
+
+    var counts = {};
+    ov.partners.forEach(function (p) { var g = group(p); counts[g] = (counts[g] || 0) + 1; });
+    counts.alle = ov.partners.length;
+    html += '<div class="tools"><label class="search">' + ICON.search + '<input type="search" id="q" placeholder="Name, E-Mail, Telegram" aria-label="Suchen" value="' + esc(st.q) + '"></label>' +
+      '<div class="chips" role="group" aria-label="Filter">' + FILTERS.map(function (f) {
+        return '<button type="button" class="chip" data-filter="' + f[0] + '" aria-pressed="' + (st.filter === f[0]) + '">' + f[1] + '<b>' + (counts[f[0]] || 0) + '</b></button>';
+      }).join('') + '</div><button type="button" class="btn-o" data-create style="margin-left:auto">' + ICON.plus + 'Person anlegen</button></div>';
+    html += '<div id="create"></div>';
+    html += '<div class="cal"><div class="track-head"><span>Teampartner</span><span class="labels">' +
+      '<span class="sup">Plugin-Call</span><span class="tall c3">Liste</span><span class="tall c4">Check-up</span><span class="tall c5">Läuft</span>' +
+      '<span class="low l1">gebucht</span><span class="low l2">erledigt</span>' +
+      '</span><span>Nächster Schritt</span><span></span></div><ul class="rows" id="plist"></ul></div>';
+    app.innerHTML = shell('home', html, true);
+    paintList();
+    setSaved(st.saving ? 'busy' : '');
+    syncPanel();
   }
 
   function paintList() {
@@ -572,6 +671,265 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
       st.ov = null;
       location.hash = '#/p/' + res.token;
     }).catch(function () { btn.disabled = false; err.textContent = 'Keine Verbindung.'; err.hidden = false; });
+  }
+
+  /* -------------------------------------------------------------- Kalender */
+  // Wie die Buchungsseite (Wochen → Kacheln → Uhrzeiten), aber mit Namen, Sperrzeiten und privaten Terminen.
+  // Ein gebuchter Termin klappt auf: Checkliste der Person und Leitfaden des Calls, Felder speichern beim Tippen.
+  var WEEK_NAMES = [['Diese Woche', 'Diese'], ['Nächste Woche', 'Nächste'], ['Übernächste Woche', 'Übernächste']];
+
+  function longDate(iso) { return fmt(iso, { weekday: 'long', day: 'numeric', month: 'long' }); }
+  function calls(n) { return n === 1 ? '1 Call' : n + ' Calls'; }
+
+  function calWeeks(cal) {
+    var weeks = [];
+    for (var i = 0; i < cal.days.length; i += 7) {
+      var days = cal.days.slice(i, i + 7);
+      var n = 0;
+      days.forEach(function (d) { d.slots.forEach(function (s) { if (s.s === 'booked') n++; }); });
+      weeks.push({ key: days[0].date, days: days, calls: n });
+    }
+    return weeks;
+  }
+
+  function weekRange(key) {
+    var end = addDays(key, 6);
+    var same = key.slice(5, 7) === end.slice(5, 7);
+    return (same ? fmt(key, { day: 'numeric' }) : fmt(key, { day: 'numeric', month: 'short' })) + '–' + fmt(end, { day: 'numeric', month: 'short' });
+  }
+
+  // Heute, sonst der erste Tag mit Calls, sonst der erste Tag mit Terminen
+  function defaultDay(w, today) {
+    if (w.days.some(function (d) { return d.date === today; })) return today;
+    var hit = w.days.filter(function (d) { return d.slots.some(function (s) { return s.s === 'booked'; }); })[0] ||
+      w.days.filter(function (d) { return !d.off; })[0] || w.days[0];
+    return hit.date;
+  }
+
+  function calDay(date) {
+    var cal = st.ov && st.ov.calendar;
+    return cal ? cal.days.filter(function (d) { return d.date === date; })[0] || null : null;
+  }
+
+  function slotByKey(key) {
+    var p = String(key || '').split('|');
+    var d = calDay(p[0]);
+    return d ? d.slots.filter(function (s) { return s.t === p[1]; })[0] || null : null;
+  }
+
+  function calSection(ov) {
+    var cal = ov.calendar;
+    if (!cal || !cal.days || !cal.days.length) return '';
+    var weeks = calWeeks(cal);
+    if (!weeks[st.calWeek]) st.calWeek = 0;
+    var w = weeks[st.calWeek];
+    if (!st.calDay || !w.days.some(function (d) { return d.date === st.calDay; })) st.calDay = defaultDay(w, cal.today);
+    var html = '<section class="calsec" aria-label="Kalender"><div class="cbar"><div class="wtabs" role="tablist" aria-label="Woche wählen">' + weeks.map(function (wk, i) {
+      var n = WEEK_NAMES[i] || [weekRange(wk.key), weekRange(wk.key)];
+      var range = WEEK_NAMES[i] ? '<span class="wr">' + esc(weekRange(wk.key)) + ' · </span>' : '';
+      return '<button type="button" class="wtab" role="tab" aria-selected="' + (i === st.calWeek) + '" data-cweek="' + i + '" aria-label="' + esc(n[0] + ', ' + weekRange(wk.key) + ', ' + calls(wk.calls)) + '">' +
+        '<span><span class="wl-l">' + esc(n[0]) + '</span><span class="wl-s">' + esc(n[1]) + '</span></span><small>' + range + calls(wk.calls) + '</small></button>';
+    }).join('') + '</div><div class="legend" aria-hidden="true"><span><i class="on"></i>Call</span><span><i></i>frei</span><span><i class="t"></i>gesperrt / privat</span></div></div>';
+    html += '<div role="tabpanel"><div class="tiles" role="group" aria-label="Tage der Woche">' + w.days.map(function (d) { return tileHtml(d, cal.today); }).join('') + '</div>' +
+      '<div class="cal dayc" id="cday">' + dayHtml(calDay(st.calDay), cal.today) + '</div></div></section>';
+    return html;
+  }
+
+  function tileHtml(d, today) {
+    var n = 0, free = 0;
+    d.slots.forEach(function (s) { if (s.s === 'booked') n++; else if (s.s === 'free' && !s.past) free++; });
+    var isToday = d.date === today, gone = d.date < today;
+    var cnt = d.off ? 'Ruhetag' : n ? calls(n) : free ? free + ' frei' : gone ? '–' : 'belegt';
+    var pips = d.off ? '' : d.slots.map(function (s) { return '<i class="' + s.s + (s.past ? ' past' : '') + '"></i>'; }).join('');
+    return '<button type="button" class="tile' + (isToday ? ' is-today' : '') + (d.off ? ' off' : '') + (gone ? ' gone' : '') + '" data-cday="' + d.date + '" aria-pressed="' + (st.calDay === d.date) + '"' +
+      ' aria-label="' + esc(longDate(d.date) + (isToday ? ', heute' : '') + ', ' + cnt) + '">' +
+      '<span class="t-top"><span class="t-wd">' + esc(fmt(d.date, { weekday: 'short' }).replace('.', '')) + '</span><span class="t-mo">' + (isToday ? 'Heute' : esc(fmt(d.date, { month: 'short' }))) + '</span></span>' +
+      '<span class="t-num">' + esc(fmt(d.date, { day: 'numeric' }).replace('.', '')) + '</span>' +
+      '<span class="t-bot"><span class="dpips" aria-hidden="true">' + pips + '</span><span class="t-cnt' + (n ? '' : ' none') + '">' + esc(cnt) + '</span></span></button>';
+  }
+
+  function dayHtml(d, today) {
+    if (!d) return '';
+    var tag = d.date === today ? 'Heute' : d.date === addDays(today, 1) ? 'Morgen' : '';
+    var n = d.slots.filter(function (s) { return s.s === 'booked'; }).length;
+    var free = d.slots.filter(function (s) { return s.s === 'free' && !s.past; }).length;
+    var cnt = d.off ? 'Ruhetag' : calls(n) + (free ? ' · ' + free + ' frei' : '');
+    return '<h2 class="band"><span>' + esc(fmt(d.date, { weekday: 'long' })) + '</span><span class="dd">' + esc(fmt(d.date, { day: 'numeric', month: 'long' })) + '</span>' +
+      (tag ? '<span class="tag">' + tag + '</span>' : '') + '<span class="cnt">' + cnt + '</span></h2><ul class="rows">' +
+      (d.off ? '<li class="empty">An diesem Tag gibt es keine Termine.</li>' : d.slots.map(function (s) { return slotHtml(d, s); }).join('')) + '</ul>';
+  }
+
+  function slotHtml(d, s) {
+    var key = d.date + '|' + s.t;
+    var time = '<span class="time">' + s.t + '</span>';
+    if (s.s === 'booked') {
+      var b = s.b, open = st.calOpen === key, id = 'ap-' + d.date + '-' + s.t.replace(':', '');
+      var extra = b.status === 'gebucht' ? (s.past ? '<span class="tag warn">Status setzen</span>' : '') : '<small>' + esc(b.status) + '</small>';
+      return '<li><button type="button" class="slot" data-cslot="' + key + '" aria-expanded="' + open + '" aria-controls="' + id + '">' + time + mark({ status: b.status, past: s.past }) +
+        '<span class="what"><b>' + esc(b.name || 'Ohne Namen') + '</b><span class="kind">' + KIND[b.kind] + '</span>' + extra + '</span><span class="side">' + ICON.down + '</span></button>' +
+        '<div class="apanel' + (open ? ' open' : '') + '" id="' + id + '"><div><div class="ap-in">' + (open ? panelHtml(s) : '') + '</div></div></div></li>';
+    }
+    if (s.s === 'blocked') {
+      var bl = s.block || {};
+      return '<li class="slot muted">' + time + '<span class="mk done" aria-hidden="true"></span><span class="what"><span>Gesperrt' + (s.note ? ' · ' + esc(s.note) : '') + '</span><small>' + esc(bl.range || '') + '</small></span>' +
+        (bl.row ? '<button type="button" class="btn-q" data-cunblock="' + bl.row + '" data-date="' + esc(bl.date) + '" data-range="' + esc(bl.range || '') + '">Freigeben</button>' : '<span></span>') + '</li>';
+    }
+    if (s.s === 'busy') {
+      return '<li class="slot muted">' + time + '<span class="mk done" aria-hidden="true"></span><span class="what"><span>Privater Termin' + (s.note ? ' · ' + esc(s.note) : '') + '</span><small>Google Kalender</small></span><span></span></li>';
+    }
+    if (s.past) return '<li class="slot muted">' + time + '<span class="mk void" aria-hidden="true"></span><span class="what">–</span><span></span></li>';
+    return '<li class="slot muted">' + time + '<span class="mk void" aria-hidden="true"></span><span class="what">frei</span>' +
+      '<button type="button" class="btn-q" data-cblock="' + key + '" data-end="' + esc(s.e) + '">Sperren</button></li>';
+  }
+
+  // Inhalt des aufgeklappten Termins: Checkliste links, Leitfaden für genau diesen Call rechts
+  function panelHtml(s) {
+    var r = st.person;
+    if (!r || r.token !== s.b.token) return '<div class="ap-wait" role="status" aria-label="Checkliste und Leitfaden werden geladen"><div class="sk"></div><div class="sk"></div></div>';
+    var f = r.fields;
+    var plugin = latest(r.bookings, 'plugin'), checkup = latest(r.bookings, 'checkup');
+    var bk = r.bookings.filter(function (x) { return x.id === s.b.id; })[0] || null;
+    var n = CHECK.filter(function (c) { return f[c] === true; }).length;
+    var html = '<div class="ap-top"><p class="meta"><span>' + esc(f['Neu / Bestand'] || 'neu') + '</span>' +
+      (f['Telegram'] ? '<span><a href="https://t.me/' + esc(String(f['Telegram']).replace(/^@/, '')) + '" target="_blank" rel="noopener">' + esc(f['Telegram']) + '</a></span>' : '') +
+      (f['E-Mail'] ? '<span><a href="mailto:' + esc(f['E-Mail']) + '">' + esc(f['E-Mail']) + '</a></span>' : '') + '</p><div class="ap-act">' +
+      (bk ? '<label class="pill-select">Status<select data-booking="' + esc(bk.id) + '">' + STATUS.map(function (x) { return '<option' + (x === bk.status ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label>' : '') +
+      '<a class="btn-o" href="#/p/' + esc(r.token) + '">Akte öffnen' + ICON.chev + '</a></div></div>';
+    var list = '<section class="ap-card"><h3 class="band"><span>48h-Checkliste</span><span class="cnt" id="ap-cnt">' + (r.pluginDone ? n + ' von 6' : 'gesperrt') + '</span></h3>' +
+      CHECK.map(function (c) {
+        return '<label class="check"><input type="checkbox" data-field="' + esc(c) + '"' + (f[c] === true ? ' checked' : '') + (r.pluginDone ? '' : ' disabled') + '>' + esc(CHECK_T[c]) + '</label>';
+      }).join('') + '<div class="check" style="cursor:default"><span>Check-up-Call</span><small>' +
+      (checkup ? esc(shortDate(checkup.date) + ' ' + checkup.time + ' · ' + checkup.status) : r.checkupFrom ? 'ab ' + esc(shortDate(r.checkupFrom.date) + ' ' + r.checkupFrom.time) : r.pluginDone ? 'noch nicht gebucht' : '–') +
+      '</small></div></section>';
+    var isPlugin = s.b.kind === 'plugin';
+    var guide = '<section class="ap-card"><h3 class="band"><span>Leitfaden · ' + (isPlugin ? 'Plugin-Call' : 'Check-up-Call') + '</span><span class="cnt">' + (isPlugin ? '30–45 Min' : 'bis 60 Min') + '</span></h3>' +
+      '<ol class="guide">' + (isPlugin ? PLUGIN_GUIDE : CHECKUP_GUIDE).map(function (g, i) { return guideRow(g, i, plugin, checkup); }).join('') + '</ol></section>';
+    // Vor dem Plugin-Call ist die Checkliste noch gesperrt: auf dem Handy steht dann der Leitfaden oben
+    return html + '<div class="ap-grid' + (r.pluginDone ? '' : ' locked') + '">' + list + guide + '</div>';
+  }
+
+  function panelInner(key) {
+    var btn = app.querySelector('[data-cslot="' + key + '"]');
+    var panel = btn && document.getElementById(btn.getAttribute('aria-controls'));
+    return panel ? panel.querySelector('.ap-in') : null;
+  }
+
+  function loadPanelPerson(s, key) {
+    admin('apiAdminPerson', s.b.token).then(function (res) {
+      if (st.calOpen !== key || st.view !== 'home') return;
+      var inner = panelInner(key);
+      if (!res || !res.ok) { if (inner) inner.innerHTML = '<p class="ap-load">' + esc((res && res.msg) || 'Diese Person gibt es nicht (mehr).') + '</p>'; return; }
+      st.person = res; st.ctx = 'cal';
+      if (inner) inner.innerHTML = panelHtml(s);
+    }).catch(function (err) {
+      if (err && err.message === 'AUTH') return;
+      var inner = st.calOpen === key && panelInner(key);
+      if (inner) inner.innerHTML = '<p class="ap-load">Keine Verbindung. Klapp den Termin zu und wieder auf.</p>';
+    });
+  }
+
+  // Nach dem Neuzeichnen: offenen Termin wieder füllen oder schließen, wenn er nicht mehr gebucht ist
+  function syncPanel() {
+    if (!st.calOpen) return;
+    var s = slotByKey(st.calOpen);
+    if (!s || s.s !== 'booked') { leavePerson(); st.calOpen = null; return; }
+    if (!st.person || st.person.token !== s.b.token) loadPanelPerson(s, st.calOpen);
+  }
+
+  // Person im Kalender verlassen: Ungespeichertes senden, danach gehört das Autosave niemandem mehr
+  function leavePerson() {
+    if (st.ctx !== 'cal') return;
+    var pending = flushSave();
+    st.person = null; st.ctx = null;
+    pending.then(function () { if (st.view === 'home' && st.ovAt === 0 && st.ov) loadOverview(true).then(function () { if (st.view === 'home') paintList(); }); });
+  }
+
+  function closeSlot() {
+    var key = st.calOpen;
+    if (!key) return;
+    var btn = app.querySelector('[data-cslot="' + key + '"]');
+    if (btn) {
+      btn.setAttribute('aria-expanded', 'false');
+      var panel = document.getElementById(btn.getAttribute('aria-controls'));
+      if (panel) panel.classList.remove('open');
+    }
+    st.calOpen = null;
+    leavePerson();
+  }
+
+  function toggleSlot(btn) {
+    var key = btn.getAttribute('data-cslot');
+    var wasOpen = st.calOpen === key;
+    closeSlot();
+    if (wasOpen) return;
+    var s = slotByKey(key);
+    if (!s || s.s !== 'booked') return;
+    st.calOpen = key;
+    btn.setAttribute('aria-expanded', 'true');
+    var panel = document.getElementById(btn.getAttribute('aria-controls'));
+    panel.querySelector('.ap-in').innerHTML = panelHtml(s);
+    void panel.offsetWidth;
+    panel.classList.add('open');
+    if (!s.b.token) { panel.querySelector('.ap-in').innerHTML = '<p class="ap-load">Zu diesem Termin gibt es keine Akte.</p>'; return; }
+    loadPanelPerson(s, key);
+  }
+
+  function selectWeek(i) {
+    if (i === st.calWeek) return;
+    closeSlot();
+    st.calWeek = i;
+    st.calDay = null;
+    var box = document.getElementById('calsec');
+    if (box) box.innerHTML = calSection(st.ov);
+  }
+
+  function selectDay(date) {
+    if (date === st.calDay) return;
+    closeSlot();
+    st.calDay = date;
+    app.querySelectorAll('.tile').forEach(function (t) { t.setAttribute('aria-pressed', String(t.getAttribute('data-cday') === date)); });
+    var box = document.getElementById('cday');
+    if (!box) return;
+    box.innerHTML = dayHtml(calDay(date), st.ov.calendar.today);
+    box.classList.remove('reveal');
+    void box.offsetWidth;
+    box.classList.add('reveal');
+  }
+
+  // Kalender und Liste mit frischen Daten neu zeichnen, ohne dass die Seite springt
+  function refreshCal() {
+    var y = window.scrollY;
+    var token = st.ctx === 'cal' && st.person ? st.person.token : null;
+    return Promise.all([loadOverview(true), token ? admin('apiAdminPerson', token) : null]).then(function (r) {
+      if (st.view !== 'home') return;
+      if (r[1] && r[1].ok && st.person && st.person.token === token) {
+        st.person = r[1];
+        Object.keys(st.dirty).forEach(function (k) { st.person.fields[k] = st.dirty[k]; });
+      }
+      paintOverview(r[0]);
+      window.scrollTo(0, y);
+    }).catch(function (err) { if (!err || err.message !== 'AUTH') toast('Keine Verbindung.'); });
+  }
+
+  function quickBlock(t) {
+    var p = t.getAttribute('data-cblock').split('|');
+    t.disabled = true; t.textContent = 'Sperrt …';
+    admin('apiAdminAddBlock', { date: p[0], from: p[1], to: t.getAttribute('data-end'), note: '' }).then(function (res) {
+      if (!res || !res.ok) { toast((res && res.msg) || 'Das hat nicht geklappt.'); t.disabled = false; t.textContent = 'Sperren'; return; }
+      toast('Gesperrt: ' + shortDate(p[0]) + ', ' + p[1] + '–' + t.getAttribute('data-end'));
+      return refreshCal();
+    }).catch(function (err) { if (!err || err.message !== 'AUTH') { toast('Keine Verbindung.'); t.disabled = false; t.textContent = 'Sperren'; } });
+  }
+
+  function quickUnblock(t) {
+    var date = t.getAttribute('data-date'), range = t.getAttribute('data-range');
+    if (!confirm('Sperrzeit am ' + shortDate(date) + ' (' + range + ') freigeben? Danach kann dort wieder gebucht werden.')) return;
+    t.disabled = true;
+    admin('apiAdminRemoveBlock', Number(t.getAttribute('data-cunblock')), date).then(function (res) {
+      if (!res || !res.ok) { toast((res && res.msg) || 'Das hat nicht geklappt.'); t.disabled = false; return; }
+      toast('Freigegeben.');
+      return refreshCal();
+    }).catch(function (err) { if (!err || err.message !== 'AUTH') { toast('Keine Verbindung.'); t.disabled = false; } });
   }
 
   /* ------------------------------------------------------------------ Akte */
@@ -700,23 +1058,31 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     var fields = st.dirty;
     if (!st.person || !Object.keys(fields).length) return Promise.resolve();
     st.dirty = {};
+    return sendSave(st.person.token, fields);
+  }
+
+  function sendSave(token, fields) {
     st.saving = true;
     setSaved('busy', 'Speichert …');
-    var token = st.person.token;
     return admin('apiAdminSave', token, fields).then(function (res) {
       st.saving = false;
       if (!res || !res.ok) { setSaved('err', 'Nicht gespeichert'); toast((res && res.msg) || 'Nicht gespeichert.'); return; }
-      st.ov = null; // Übersicht beim nächsten Mal neu laden
+      st.ovAt = 0; // Übersicht beim nächsten Mal neu laden
       var t = new Date();
       setSaved('', 'Gespeichert ' + String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0'));
-      if (fields['Phase'] !== undefined) refreshPerson();
+      if (fields['Phase'] !== undefined && st.person && st.person.token === token) refreshPerson();
     }).catch(function (err) {
       st.saving = false;
       if (err && err.message === 'AUTH') return;
-      Object.keys(fields).forEach(function (k) { if (st.dirty[k] === undefined) st.dirty[k] = fields[k]; });
       setSaved('err', 'Nicht gespeichert');
       toast('Keine Verbindung – Änderungen werden erneut gesendet.');
-      st.saveTimer = setTimeout(flushSave, 4000);
+      if (st.person && st.person.token === token) {
+        // Neuere Eingaben gewinnen: nur zurücklegen, was seitdem nicht erneut geändert wurde
+        Object.keys(fields).forEach(function (k) { if (st.dirty[k] === undefined) st.dirty[k] = fields[k]; });
+        st.saveTimer = setTimeout(flushSave, 4000);
+      } else {
+        setTimeout(function () { sendSave(token, fields); }, 4000);
+      }
     });
   }
 
@@ -729,6 +1095,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
 
   function refreshPerson() {
     if (!st.person) return;
+    if (st.ctx === 'cal') return refreshCal();
     var token = st.person.token;
     var y = window.scrollY;
     return admin('apiAdminPerson', token).then(function (res) {
@@ -740,7 +1107,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     setSaved('busy', 'Speichert …');
     return flushSave().then(function () { return admin('apiAdminSetStatus', id, status); }).then(function (res) {
       if (!res || !res.ok) { toast((res && res.msg) || 'Das hat nicht geklappt.'); setSaved('err', 'Nicht gespeichert'); return; }
-      st.ov = null;
+      st.ovAt = 0;
       setSaved('', 'Gespeichert');
       toast(status === 'erledigt' ? 'Als erledigt markiert.' : status === 'storniert' ? 'Termin abgesagt, Kalendertermin gelöscht.' : 'Status: ' + status);
       if (st.person) return refreshPerson();
@@ -821,8 +1188,10 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
     if (!st.session) return renderLogin('');
     var h = location.hash || '#/';
     var m = h.match(/^#\/p\/([0-9a-f-]{36})$/);
+    if (Object.keys(st.dirty).length) flushSave();
+    st.person = null; st.ctx = null; st.calOpen = null;
+    st.view = m ? 'person' : h === '#/termine' ? 'termine' : h === '#/sperrzeiten' ? 'sperr' : 'home';
     if (m) return renderPerson(m[1]);
-    st.person = null;
     if (h === '#/termine') return renderTermine();
     if (h === '#/sperrzeiten') return renderBlocks();
     return renderOverview();
@@ -854,7 +1223,11 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
   app.addEventListener('change', function (e) {
     var t = e.target;
     var name = t.getAttribute('data-field');
-    if (name && t.type === 'checkbox') { queueSave(name, t.checked); flushSave(); }
+    if (name && t.type === 'checkbox') {
+      queueSave(name, t.checked); flushSave();
+      var cnt = st.ctx === 'cal' && CHECK.indexOf(name) !== -1 && document.getElementById('ap-cnt');
+      if (cnt) cnt.textContent = CHECK.filter(function (c) { return st.person.fields[c] === true; }).length + ' von 6';
+    }
     else if (name && t.tagName === 'SELECT') { queueSave(name, t.value); flushSave(); }
     else if (t.hasAttribute('data-booking')) setStatus(t.getAttribute('data-booking'), t.value);
   });
@@ -881,6 +1254,11 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
       st.openSec = st.openSec || {};
       st.openSec[id] = open;
     }
+    else if (t.hasAttribute('data-cweek')) selectWeek(Number(t.getAttribute('data-cweek')));
+    else if (t.hasAttribute('data-cday')) selectDay(t.getAttribute('data-cday'));
+    else if (t.hasAttribute('data-cslot')) toggleSlot(t);
+    else if (t.hasAttribute('data-cblock')) quickBlock(t);
+    else if (t.hasAttribute('data-cunblock')) quickUnblock(t);
     else if (t.hasAttribute('data-create')) openCreate();
     else if (t.hasAttribute('data-create-cancel')) document.getElementById('create').innerHTML = '';
     else if (t.hasAttribute('data-status')) { t.disabled = true; setStatus(t.getAttribute('data-id'), t.getAttribute('data-status')); }
